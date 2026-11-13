@@ -1652,10 +1652,19 @@ class CardVaultApp {
 
     try {
       const res = await fetch(this.googleScriptUrl, { redirect: 'follow' });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        console.error('Raw response from Google Script:', text);
+        if (text.includes('<html') || text.includes('accounts.google.com')) {
+          throw new Error('Please set "Who has access" to "Anyone" in Google Apps Script deployment');
+        }
+        throw new Error('Failed to parse response: ' + parseErr.message);
+      }
+
       if (data.status === 'success' && Array.isArray(data.cards)) {
-        // Full 2-way sync: Google Sheet is the Source of Truth
-        // When you edit rows directly in Google Sheet, CardVault adopts the latest edits!
         if (data.cards.length > 0) {
           const deletedIds = new Set(JSON.parse(localStorage.getItem('atl_deleted_ids') || '[]'));
           const favMap = new Map(this.cards.map(c => [c.id, c.favorite]));
@@ -1682,11 +1691,18 @@ class CardVaultApp {
         } else if (!silent) {
           this.showToast('Google Sheet is currently empty');
         }
+      } else if (data.status === 'error') {
+        throw new Error(data.message || 'Apps script error');
       }
     } catch (err) {
       console.error('Failed to pull from Google Sheet:', err);
+      const statusText = document.getElementById('syncStatusText');
+      if (statusText) {
+        statusText.textContent = err.message;
+        statusText.className = 'font-mono text-rose-400 font-semibold';
+      }
       if (!silent) {
-        this.showToast('Could not fetch from Google Sheet (check URL permissions)');
+        this.showToast(err.message.includes('Anyone') ? 'Set "Who has access" to Anyone in Apps Script' : 'Check Google Sheet permissions');
       }
     } finally {
       icon?.classList.remove('animate-spin');

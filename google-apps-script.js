@@ -167,7 +167,7 @@ function doGet(e) {
         address: String(row[9] || ''),
         techInterests: String(row[10] || '').split(',').map(s => s.trim()).filter(Boolean),
         notes: String(row[11] || ''),
-        lastMet: row[12] ? (row[12] instanceof Date ? Utilities.formatDate(row[12], 'GMT+8', 'yyyy-MM-dd') : String(row[12])) : '',
+        lastMet: row[12] ? (row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10)) : '',
         cardFrontImage: String(row[13] || ''),
         theme: 'executive-navy',
         favorite: false
