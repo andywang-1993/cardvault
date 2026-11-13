@@ -1666,18 +1666,15 @@ class CardVaultApp {
 
       if (data.status === 'success' && Array.isArray(data.cards)) {
         if (data.cards.length > 0) {
-          const deletedIds = new Set(JSON.parse(localStorage.getItem('atl_deleted_ids') || '[]'));
           const favMap = new Map(this.cards.map(c => [c.id, c.favorite]));
 
-          // Filter out explicitly deleted cards so they never resurrect
-          this.cards = data.cards
-            .filter(c => !deletedIds.has(c.id))
-            .map(c => {
-              if (favMap.has(c.id)) {
-                c.favorite = favMap.get(c.id);
-              }
-              return c;
-            });
+          // Adopt all active rows from Google Sheet as Source of Truth
+          this.cards = data.cards.map(c => {
+            if (favMap.has(c.id)) {
+              c.favorite = favMap.get(c.id);
+            }
+            return c;
+          });
 
           this.saveData();
           this.populateFilterOptions();
@@ -1688,8 +1685,14 @@ class CardVaultApp {
               window.confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
             }
           }
-        } else if (!silent) {
-          this.showToast('Google Sheet is currently empty');
+        } else {
+          this.cards = [];
+          this.saveData();
+          this.populateFilterOptions();
+          this.render();
+          if (!silent) {
+            this.showToast('Google Sheet is currently empty');
+          }
         }
       } else if (data.status === 'error') {
         throw new Error(data.message || 'Apps script error');
