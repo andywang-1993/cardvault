@@ -169,6 +169,7 @@ class CardVaultApp {
     document.getElementById('btnOpenCloudSync')?.addEventListener('click', () => this.openCloudSyncModal());
     document.getElementById('btnCloudSyncClose')?.addEventListener('click', () => this.closeCloudSyncModal());
     document.getElementById('btnSaveSyncUrl')?.addEventListener('click', () => this.saveSyncUrl());
+    document.getElementById('btnSendTestPayload')?.addEventListener('click', () => this.testWriteToSheet());
     document.getElementById('btnPullFromCloud')?.addEventListener('click', () => this.pullFromGoogleSheet());
 
     // Modal controls
@@ -1507,6 +1508,60 @@ class CardVaultApp {
       }
       this.updateHeaderSyncStatus();
       this.showToast('URL saved and ready for sync');
+    }
+  }
+
+  async testWriteToSheet() {
+    if (!this.googleScriptUrl) {
+      alert('Please enter and save your Google Apps Script URL first.');
+      return;
+    }
+
+    const statusText = document.getElementById('syncStatusText');
+    if (statusText) {
+      statusText.textContent = 'Sending test row to Google Sheet...';
+      statusText.className = 'font-mono text-blue-400 font-semibold';
+    }
+
+    const testCard = {
+      id: `test-${Date.now()}`,
+      name: "ATL Test Contact (Andy)",
+      title: "Account Technical Leader",
+      company: "CardVault Live Test",
+      department: "Client Engineering",
+      stakeholderRole: "Technical Champion",
+      sentiment: "Strong Champion",
+      email: "test.contact@example.com",
+      phone: "+886 900 000 000",
+      address: "Taipei, Taiwan",
+      techInterests: ["OpenShift", "watsonx", "Cloud Modernization"],
+      notes: "Test card sent from ATL CardVault at " + new Date().toLocaleTimeString(),
+      lastMet: new Date().toISOString().split('T')[0],
+      cardFrontImage: ""
+    };
+
+    try {
+      await fetch(this.googleScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(testCard),
+        mode: 'no-cors'
+      });
+
+      if (statusText) {
+        statusText.textContent = 'Success! Test row sent to Google Sheet';
+        statusText.className = 'font-mono text-emerald-400 font-semibold';
+      }
+      this.showToast('Test card written! Please check your Google Sheet');
+      if (window.confetti) {
+        window.confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+      }
+    } catch (err) {
+      console.error('Test write failed:', err);
+      if (statusText) {
+        statusText.textContent = 'Error writing: ' + err.toString();
+        statusText.className = 'font-mono text-rose-400 font-semibold';
+      }
     }
   }
 

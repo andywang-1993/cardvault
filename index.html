@@ -872,11 +872,14 @@
           <p class="text-[10px] text-slate-500 mt-1">Get this URL from Google Sheets → Extensions → Apps Script → Deploy as Web App.</p>
         </div>
 
-        <div class="flex items-center gap-2 pt-1">
-          <button id="btnSaveSyncUrl" class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20">
-            <i data-lucide="save" class="w-3.5 h-3.5"></i> Save & Test URL
+        <div class="flex flex-col sm:flex-row items-center gap-2 pt-1">
+          <button id="btnSaveSyncUrl" class="w-full sm:flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i> Save URL
           </button>
-          <button id="btnPullFromCloud" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
+          <button id="btnSendTestPayload" class="w-full sm:flex-1 py-2 px-3 rounded-xl bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/40 text-amber-300 font-semibold transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i> Test Write to Sheet
+          </button>
+          <button id="btnPullFromCloud" class="w-full sm:flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400" id="iconPullSync"></i> Pull from Sheet
           </button>
         </div>
