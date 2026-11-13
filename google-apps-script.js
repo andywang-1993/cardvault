@@ -4,15 +4,13 @@
  * 部署說明：
  * 1. 在 Google 試算表中，點擊上方選單【擴充功能】->【Apps Script】。
  * 2. 清空原本的程式碼，將本檔案全部複製貼上。
- * 3. 點擊右上角【部署】(Deploy) ->【新增部署】(New deployment)。
- * 4. 種類選擇【網頁應用程式】(Web app)。
- * 5. 設定：
+ * 3. 點擊右上角【部署】(Deploy) ->【新增部署】或【管理部署作業】。
+ * 4. 設定：
  *    - 執行身分：【我】(Me)
  *    - 誰可以存取：【所有人】(Anyone)
- * 6. 點擊【部署】，複製產生的【網頁應用程式網址】(Web App URL)，貼回 CardVault 設定中即可！
+ * 5. 點擊【部署】，複製上面的【網頁應用程式網址】(Web App URL)，貼回 CardVault 設定中即可！
  */
 
-// 試算表分頁名稱與 Drive 資料夾名稱
 const SHEET_NAME = 'Namecards';
 const FOLDER_NAME = 'ATL_Namecards_Photos';
 
@@ -21,37 +19,18 @@ function setupSheetAndFolder() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    // 建立表頭
     sheet.appendRow([
-      'ID',
-      'Name',
-      'Title',
-      'Company',
-      'Department',
-      'Role',
-      'Sentiment',
-      'Email',
-      'Phone',
-      'Address',
-      'TechInterests',
-      'Notes',
-      'LastMet',
-      'PhotoDriveUrl',
-      'CreatedAt'
+      'ID', 'Name', 'Title', 'Company', 'Department', 'Role', 'Sentiment',
+      'Email', 'Phone', 'Address', 'TechInterests', 'Notes', 'LastMet',
+      'PhotoDriveUrl', 'CreatedAt'
     ]);
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, 15).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
   }
 
-  // 檢查或建立 Google Drive 名片相片資料夾
   const folders = DriveApp.getFoldersByName(FOLDER_NAME);
-  let folder;
-  if (folders.hasNext()) {
-    folder = folders.next();
-  } else {
-    folder = DriveApp.createFolder(FOLDER_NAME);
-    folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  }
+  let folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(FOLDER_NAME);
+  folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return { sheet: sheet, folder: folder };
 }
 
@@ -67,11 +46,10 @@ function doPost(e) {
     // 處理刪除名片 (Action: Delete)
     if (data.action === 'delete') {
       const values = sheet.getDataRange().getValues();
-      // 從最後一行往前比對刪除（避免索引位移問題）
       for (let i = values.length - 1; i >= 1; i--) {
         const rowId = String(values[i][0]).trim();
         const rowName = String(values[i][1]).trim();
-        if ((data.id && rowId === String(data.id).trim()) ||
+        if ((data.id && rowId === String(data.id).trim()) || 
             (data.name && rowName.toLowerCase() === String(data.name).trim().toLowerCase())) {
           sheet.deleteRow(i + 1);
         }
@@ -97,7 +75,7 @@ function doPost(e) {
       }
     }
 
-    // 寫入 Google 試算表
+    // 寫入 Google 試算表（自動加上 ' 避免電話報錯）
     sheet.appendRow([
       data.id || ('card-' + new Date().getTime()),
       data.name || '',
@@ -116,17 +94,10 @@ function doPost(e) {
       new Date().toISOString()
     ]);
 
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'success',
-      message: 'Card and photo successfully stored in Google Drive & Sheets',
-      photoUrl: photoUrl
-    })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Card stored', photoUrl: photoUrl })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'error',
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -147,12 +118,11 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    const headers = values[0];
     const cards = [];
 
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
-      if (!row[0] && !row[1]) continue; // 跳過空行
+      if (!row[0] && !row[1]) continue;
 
       cards.push({
         id: String(row[0] || 'card-' + i),
