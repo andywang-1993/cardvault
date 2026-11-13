@@ -1067,10 +1067,17 @@ class CardVaultApp {
     const buyers = this.cards.filter(c => c.stakeholderRole === 'Economic Buyer').length;
     const accounts = new Set(this.cards.map(c => c.company || c.account)).size;
 
-    document.getElementById('metricChampions').textContent = champions;
-    document.getElementById('metricBuyers').textContent = buyers;
-    document.getElementById('metricAccounts').textContent = accounts;
-    document.getElementById('badgeCardCount').textContent = total;
+    const champEl = document.getElementById('metricChampions');
+    if (champEl) champEl.textContent = champions;
+
+    const buyerEl = document.getElementById('metricBuyers');
+    if (buyerEl) buyerEl.textContent = buyers;
+
+    const accEl = document.getElementById('metricAccounts');
+    if (accEl) accEl.textContent = accounts;
+
+    const badgeEl = document.getElementById('badgeCardCount');
+    if (badgeEl) badgeEl.textContent = total;
   }
 
   getRoleBadgeHtml(role) {
