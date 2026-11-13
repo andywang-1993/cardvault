@@ -1115,18 +1115,25 @@ class CardVaultApp {
     card3d?.classList.remove('is-flipped');
     card3d.className = `business-card-3d theme-${card.theme || 'executive-navy'} shimmer-effect cursor-pointer`;
 
+    // Safe text setter helper
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+
     // Populate Modal
-    document.getElementById('modalStakeholderBadge').innerHTML = this.getRoleBadgeHtml(card.stakeholderRole);
-    document.getElementById('modalFrontName').textContent = card.name;
-    document.getElementById('modalFrontTitle').textContent = card.title;
-    document.getElementById('modalFrontCompany').textContent = card.company;
-    document.getElementById('modalFrontEmail').textContent = card.email || 'No email provided';
-    document.getElementById('modalFrontPhone').textContent = card.phone || 'No phone provided';
-    document.getElementById('modalFrontAddress').textContent = card.address || card.company;
+    const badgeEl = document.getElementById('modalStakeholderBadge');
+    if (badgeEl) badgeEl.innerHTML = this.getRoleBadgeHtml(card.stakeholderRole);
+    setText('modalFrontName', card.name);
+    setText('modalFrontTitle', card.title);
+    setText('modalFrontCompany', card.company);
+    setText('modalFrontEmail', card.email || 'No email provided');
+    setText('modalFrontPhone', card.phone || 'No phone provided');
+    setText('modalFrontAddress', card.address || card.company);
 
     // Back face
-    document.getElementById('modalBackSentiment').textContent = card.sentiment || 'Champion';
-    document.getElementById('modalBackId').textContent = card.id.replace('card-', '');
+    setText('modalBackSentiment', card.sentiment || 'Champion');
+    setText('modalBackId', card.id.replace('card-', ''));
     
     const techBox = document.getElementById('modalBackTechTags');
     if (techBox) {
@@ -1155,8 +1162,8 @@ class CardVaultApp {
     }
 
     // Notes
-    document.getElementById('modalLastMetBadge').textContent = `Last Met: ${card.lastMet || 'Recent'} (${card.meetingCount || 1} syncs)`;
-    document.getElementById('modalNotesText').textContent = card.notes || 'No architecture notes logged yet.';
+    setText('modalLastMetBadge', `Last Met: ${card.lastMet || 'Recent'} (${card.meetingCount || 1} syncs)`);
+    setText('modalNotesText', card.notes || 'No architecture notes logged yet.');
 
     modal.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
@@ -1321,8 +1328,10 @@ class CardVaultApp {
     const card = this.cards.find(c => c.id === cardId);
     if (!card) return;
 
-    document.getElementById('qrContactName').textContent = card.name;
-    document.getElementById('qrContactCompany').textContent = `${card.title} • ${card.company}`;
+    const qrName = document.getElementById('qrContactName');
+    if (qrName) qrName.textContent = card.name;
+    const qrCompany = document.getElementById('qrContactCompany');
+    if (qrCompany) qrCompany.textContent = `${card.title} • ${card.company}`;
 
     const qrContainer = document.getElementById('qrcodeCanvas');
     if (qrContainer) {
@@ -1457,11 +1466,18 @@ class CardVaultApp {
 
   resetFilters() {
     this.filters = { search: '', account: 'ALL', role: 'ALL', tech: 'ALL', vipOnly: false, sortBy: 'recent' };
-    document.getElementById('globalSearchInput').value = '';
-    document.getElementById('filterAccount').value = 'ALL';
-    document.getElementById('filterRole').value = 'ALL';
-    document.getElementById('filterTech').value = 'ALL';
-    document.getElementById('sortCards').value = 'recent';
+    const globalSearch = document.getElementById('globalSearchInput');
+    if (globalSearch) globalSearch.value = '';
+    const mobSearch = document.getElementById('mobileSearchInput');
+    if (mobSearch) mobSearch.value = '';
+    const acc = document.getElementById('filterAccount');
+    if (acc) acc.value = 'ALL';
+    const role = document.getElementById('filterRole');
+    if (role) role.value = 'ALL';
+    const tech = document.getElementById('filterTech');
+    if (tech) tech.value = 'ALL';
+    const sort = document.getElementById('sortCards');
+    if (sort) sort.value = 'recent';
     const btnVIP = document.getElementById('btnFilterFavorites');
     btnVIP?.classList.remove('bg-amber-500/20', 'text-amber-400', 'border-amber-400/50');
     this.render();
