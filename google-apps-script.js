@@ -133,10 +133,12 @@ function doPost(e) {
 // 供手機與電腦隨時拉取最新所有名片資料 (GET)
 function doGet(e) {
   try {
-    const setup = setupSheetAndFolder();
-    const sheet = setup.sheet;
-    const dataRange = sheet.getDataRange();
-    const values = dataRange.getValues();
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      sheet = ss.getSheets()[0]; // 預設使用第一個分頁
+    }
+    const values = sheet.getDataRange().getValues();
 
     if (values.length <= 1) {
       return ContentService.createTextOutput(JSON.stringify({
