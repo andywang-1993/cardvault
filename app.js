@@ -1512,12 +1512,26 @@ class CardVaultApp {
   }
 
   async testWriteToSheet() {
-    if (!this.googleScriptUrl) {
-      alert('Please enter and save your Google Apps Script URL first.');
-      return;
+    const input = document.getElementById('inputGoogleScriptUrl');
+    const inputUrl = input ? input.value.trim() : '';
+    
+    // Auto-save URL if typed into input but not saved yet
+    if (inputUrl && inputUrl !== this.googleScriptUrl) {
+      this.googleScriptUrl = inputUrl;
+      localStorage.setItem('atl_google_script_url', inputUrl);
+      this.updateHeaderSyncStatus();
     }
 
     const statusText = document.getElementById('syncStatusText');
+    if (!this.googleScriptUrl) {
+      if (statusText) {
+        statusText.textContent = 'Please paste your Google Script URL above first!';
+        statusText.className = 'font-mono text-rose-400 font-semibold';
+      }
+      this.showToast('Please paste your Google Script URL above');
+      return;
+    }
+
     if (statusText) {
       statusText.textContent = 'Sending test row to Google Sheet...';
       statusText.className = 'font-mono text-blue-400 font-semibold';
@@ -1535,7 +1549,7 @@ class CardVaultApp {
       phone: "+886 900 000 000",
       address: "Taipei, Taiwan",
       techInterests: ["OpenShift", "watsonx", "Cloud Modernization"],
-      notes: "Test card sent from ATL CardVault at " + new Date().toLocaleTimeString(),
+      notes: "Test card sent from mobile CardVault at " + new Date().toLocaleTimeString(),
       lastMet: new Date().toISOString().split('T')[0],
       cardFrontImage: ""
     };
@@ -1545,7 +1559,8 @@ class CardVaultApp {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(testCard),
-        mode: 'no-cors'
+        mode: 'no-cors',
+        keepalive: true
       });
 
       if (statusText) {
@@ -1562,6 +1577,7 @@ class CardVaultApp {
         statusText.textContent = 'Error writing: ' + err.toString();
         statusText.className = 'font-mono text-rose-400 font-semibold';
       }
+      this.showToast('Error sending to Google Sheet');
     }
   }
 
@@ -1617,14 +1633,19 @@ class CardVaultApp {
   async pushCardToGoogleSheet(card) {
     if (!this.googleScriptUrl) return;
     try {
+      this.showToast(`Uploading ${card.name} to Google Sheet...`);
       await fetch(this.googleScriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(card),
-        mode: 'no-cors' // Google Apps Script Web App standard mode
+        mode: 'no-cors',
+        keepalive: true
       });
       console.log('Card posted to Google Sheet & Drive:', card.name);
       this.showToast(`Synced ${card.name} to Google Sheet & Drive!`);
+      if (window.confetti) {
+        window.confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+      }
     } catch (err) {
       console.warn('Google Sheet background push notice:', err);
     }

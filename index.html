@@ -845,14 +845,14 @@
   <!-- ========================================== -->
   <!-- MODAL: GOOGLE DRIVE & SHEET CLOUD SYNC     -->
   <!-- ========================================== -->
-  <div id="cloudSyncModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="glass-modal max-w-lg w-full rounded-2xl border border-slate-700/80 shadow-2xl p-6 space-y-5">
+  <div id="cloudSyncModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-modal max-w-lg w-full rounded-2xl border border-slate-700/80 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <h3 class="text-sm font-bold text-white flex items-center gap-2">
           <i data-lucide="cloud" class="w-4 h-4 text-blue-400"></i> Google Drive & Sheet Sync
         </h3>
-        <button id="btnCloudSyncClose" class="p-1 rounded-lg text-slate-400 hover:text-white">
-          <i data-lucide="x" class="w-4 h-4"></i>
+        <button type="button" id="btnCloudSyncClose" class="p-2 rounded-lg text-slate-400 hover:text-white touch-manipulation">
+          <i data-lucide="x" class="w-5 h-5 pointer-events-none"></i>
         </button>
       </div>
 
@@ -873,14 +873,14 @@
         </div>
 
         <div class="flex flex-col sm:flex-row items-center gap-2 pt-1">
-          <button id="btnSaveSyncUrl" class="w-full sm:flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20">
-            <i data-lucide="save" class="w-3.5 h-3.5"></i> Save URL
+          <button type="button" id="btnSaveSyncUrl" class="w-full sm:flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20 active:scale-95 touch-manipulation cursor-pointer">
+            <i data-lucide="save" class="w-4 h-4 pointer-events-none"></i> Save URL
           </button>
-          <button id="btnSendTestPayload" class="w-full sm:flex-1 py-2 px-3 rounded-xl bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/40 text-amber-300 font-semibold transition-all flex items-center justify-center gap-1.5">
-            <i data-lucide="send" class="w-3.5 h-3.5"></i> Test Write to Sheet
+          <button type="button" id="btnSendTestPayload" class="w-full sm:flex-1 py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-amber-600/30 active:scale-95 touch-manipulation cursor-pointer">
+            <i data-lucide="send" class="w-4 h-4 pointer-events-none"></i> Test Write
           </button>
-          <button id="btnPullFromCloud" class="w-full sm:flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400" id="iconPullSync"></i> Pull from Sheet
+          <button type="button" id="btnPullFromCloud" class="w-full sm:flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5 active:scale-95 touch-manipulation cursor-pointer">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-emerald-400 pointer-events-none" id="iconPullSync"></i> Pull from Sheet
           </button>
         </div>
 
