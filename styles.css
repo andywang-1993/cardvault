@@ -1,0 +1,165 @@
+/* ATL CardVault Custom Styles & 3D Card Engine */
+
+:root {
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3D Business Card Flip & Physics */
+.card-perspective {
+  perspective: 1200px;
+}
+
+.business-card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.3s ease;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.75 / 1; /* Standard business card aspect ratio 3.5" x 2" */
+}
+
+.business-card-3d.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.card-face-back {
+  transform: rotateY(180deg);
+}
+
+/* Tactile Themes */
+.theme-executive-navy {
+  background: radial-gradient(circle at 10% 20%, #1e293b 0%, #0f172a 90%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.theme-cyber-slate {
+  background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.theme-emerald-matrix {
+  background: radial-gradient(circle at 90% 10%, #064e3b 0%, #022c22 80%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.theme-gold-prestige {
+  background: linear-gradient(135deg, #292524 0%, #1c1917 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.theme-crimson-shield {
+  background: radial-gradient(circle at 80% 80%, #4c0519 0%, #1c1917 90%);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.theme-electric-violet {
+  background: linear-gradient(135deg, #2e1065 0%, #0f172a 100%);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+
+.theme-teal-modern {
+  background: radial-gradient(circle at 20% 80%, #134e4a 0%, #0f172a 90%);
+  border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+/* Card Metallic Foil Shimmer Effect on Hover */
+.shimmer-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.08) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.08) 55%,
+    transparent 65%
+  );
+  transform: rotate(35deg) translateY(-100%);
+  transition: transform 0.75s ease;
+  pointer-events: none;
+}
+
+.business-card-3d:hover .shimmer-effect::after {
+  transform: rotate(35deg) translateY(100%);
+}
+
+/* Holographic Micro-pattern */
+.bg-grid-pattern {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.bg-circuit-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: rgba(22, 28, 45, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-modal {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Animation utilities */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s infinite ease-in-out;
+}

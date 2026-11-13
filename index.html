@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ATL Vault">
+  <link rel="manifest" href="manifest.json">
+  <title>ATL CardVault — Executive Stakeholder & Business Card Hub</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            },
+            surface: {
+              900: '#0b0f17',
+              800: '#111827',
+              700: '#1f2937',
+              600: '#374151',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Tesseract.js (Client-side OCR for Business Cards) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-[#0E1420]/80 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Persona Tag -->
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-xl">
+          <i data-lucide="credit-card" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">ATL CardVault</span>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Executive Rolodex</span>
+          </div>
+          <p class="text-xs text-slate-400">Account Technical Leader • Client Stakeholder & Card Intelligence</p>
+        </div>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input 
+            type="text" 
+            id="globalSearchInput"
+            placeholder="Search by name, company, role, tech stack (e.g., OpenShift, AI, FinOps)... [/]" 
+            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
+          >
+          <kbd class="hidden sm:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-slate-800 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2.5">
+        <!-- Google Cloud Sync Button -->
+        <button id="btnOpenCloudSync" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all shadow-md active:scale-95" title="Google Drive & Sheet Sync">
+          <i data-lucide="cloud" class="w-4 h-4 text-blue-400" id="headerCloudIcon"></i>
+          <span class="hidden sm:inline" id="headerCloudText">Google Sync</span>
+        </button>
+
+        <!-- iPhone Quick Connect Button -->
+        <button id="btnOpenPhoneConnect" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all shadow-md active:scale-95" title="Open on iPhone">
+          <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
+          <span class="hidden sm:inline">iPhone</span>
+        </button>
+
+        <button id="btnOpenScanner" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/25 active:scale-95">
+          <i data-lucide="scan-line" class="w-4 h-4"></i>
+          <span>Scan Card</span>
+        </button>
+
+        <button id="btnOpenAddModal" class="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-all">
+          <i data-lucide="plus" class="w-4 h-4 text-blue-400"></i>
+          <span>New Contact</span>
+        </button>
+
+        <!-- Export / Import Dropdown Trigger -->
+        <div class="relative">
+          <button id="btnDataMenu" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-all" title="Data Export / Import">
+            <i data-lucide="hard-drive-download" class="w-4 h-4"></i>
+          </button>
+          
+          <div id="dataDropdownMenu" class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl py-1 z-50 text-xs">
+            <button id="btnExportCSV" class="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center gap-2 text-slate-300">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i> Export to CSV
+            </button>
+            <button id="btnExportJSON" class="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center gap-2 text-slate-300">
+              <i data-lucide="download" class="w-4 h-4 text-blue-400"></i> Backup JSON
+            </button>
+            <button id="btnImportJSONTrigger" class="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center gap-2 text-slate-300">
+              <i data-lucide="upload" class="w-4 h-4 text-amber-400"></i> Restore JSON
+            </button>
+            <input type="file" id="importFileInput" accept=".json" class="hidden">
+            <div class="border-t border-slate-800 my-1"></div>
+            <button id="btnClearAllCards" class="w-full text-left px-4 py-2 hover:bg-slate-800 flex items-center gap-2 text-rose-400">
+              <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Cards (Empty)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- SECONDARY BAR: STATS & NAVIGATION TABS -->
+  <div class="border-b border-slate-800/70 bg-[#0C111C]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <!-- View Navigation Tabs -->
+      <nav class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 self-start md:self-auto text-xs sm:text-sm">
+        <button id="tabCards" class="nav-tab active-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium transition-all bg-blue-600 text-white shadow">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <span>Card Deck</span>
+          <span id="badgeCardCount" class="bg-blue-800/80 text-[11px] px-1.5 py-0.2 rounded-full font-mono">0</span>
+        </button>
+
+        <button id="tabOrgMap" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all">
+          <i data-lucide="network" class="w-4 h-4"></i>
+          <span>Account Org Map</span>
+        </button>
+
+        <button id="tabScanner" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all">
+          <i data-lucide="camera" class="w-4 h-4"></i>
+          <span>AI Card Scanner</span>
+        </button>
+
+        <button id="tabAnalytics" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all">
+          <i data-lucide="pie-chart" class="w-4 h-4"></i>
+          <span>Tech & Coverage</span>
+        </button>
+      </nav>
+
+      <!-- ATL Key Metrics Counters -->
+      <div class="flex items-center gap-4 text-xs">
+        <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-400">Champions:</span>
+          <span id="metricChampions" class="font-bold text-emerald-400 font-mono">0</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span class="text-slate-400">Decision Makers:</span>
+          <span id="metricBuyers" class="font-bold text-amber-400 font-mono">0</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+          <span class="text-slate-400">Key Accounts:</span>
+          <span id="metricAccounts" class="font-bold text-blue-400 font-mono">0</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    
+    <!-- ========================================== -->
+    <!-- VIEW 1: CARDS DECK & FILTERABLE GALLERY -->
+    <!-- ========================================== -->
+    <section id="viewCards" class="space-y-6">
+      
+      <!-- Filter & Control Bar -->
+      <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xl backdrop-blur-sm">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="text-slate-400 font-medium mr-1 flex items-center gap-1">
+            <i data-lucide="filter" class="w-3.5 h-3.5 text-blue-400"></i> Filters:
+          </span>
+
+          <!-- Account Filter -->
+          <select id="filterAccount" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="ALL">All Client Accounts</option>
+          </select>
+
+          <!-- Stakeholder Role Filter -->
+          <select id="filterRole" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="ALL">All Stakeholder Roles</option>
+            <option value="Economic Buyer">Economic Buyer</option>
+            <option value="Technical Champion">Technical Champion</option>
+            <option value="Influencer">Influencer</option>
+            <option value="Gatekeeper">Gatekeeper</option>
+            <option value="End User">End User</option>
+          </select>
+
+          <!-- Tech Tag Filter -->
+          <select id="filterTech" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="ALL">All Tech Interests</option>
+          </select>
+
+          <!-- Favorite Toggle -->
+          <button id="btnFilterFavorites" class="px-2.5 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:text-amber-400 hover:border-amber-400/40 transition-all flex items-center gap-1">
+            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>VIP Only</span>
+          </button>
+        </div>
+
+        <!-- View Display Mode & Sort -->
+        <div class="flex items-center gap-2">
+          <select id="sortCards" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="recent">Sort: Most Recently Met</option>
+            <option value="name">Sort: Name (A-Z)</option>
+            <option value="company">Sort: Company</option>
+            <option value="meetings">Sort: Most Engaged</option>
+          </select>
+
+          <div class="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+            <button id="btnViewGrid" class="p-1.5 rounded text-blue-400 bg-slate-700/60 transition-all" title="3D Card Grid View">
+              <i data-lucide="grid" class="w-4 h-4"></i>
+            </button>
+            <button id="btnViewList" class="p-1.5 rounded text-slate-400 hover:text-slate-200 transition-all" title="Compact Table View">
+              <i data-lucide="list" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Tech Cloud Pills -->
+      <div id="techPillsContainer" class="flex flex-wrap items-center gap-1.5 text-xs pt-1">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- 3D CARDS GRID -->
+      <div id="cardsGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Cards dynamically populated here -->
+      </div>
+
+      <!-- COMPACT LIST TABLE VIEW (Hidden by default) -->
+      <div id="cardsListContainer" class="hidden bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700 text-[11px]">
+              <tr>
+                <th class="py-3 px-4">Contact & Title</th>
+                <th class="py-3 px-4">Account / Org</th>
+                <th class="py-3 px-4">Stakeholder Role</th>
+                <th class="py-3 px-4">Key Tech Focus</th>
+                <th class="py-3 px-4">Last Met</th>
+                <th class="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cardsListTableBody" class="divide-y divide-slate-800">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="cardsEmptyState" class="hidden py-16 text-center space-y-3 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800">
+        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+          <i data-lucide="search-x" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-base font-semibold text-slate-200">No client cards found</h3>
+        <p class="text-xs text-slate-400 max-w-sm mx-auto">Try clearing your search query or adjusting your filters to find who you're looking for.</p>
+        <button id="btnClearFilters" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-blue-400 rounded-lg border border-slate-700">
+          Reset all filters
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: ACCOUNT & STAKEHOLDER ORG MATRIX -->
+    <!-- ========================================== -->
+    <section id="viewOrgMap" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="network" class="w-5 h-5 text-blue-400"></i> Account Stakeholder & Power Map
+          </h2>
+          <p class="text-xs text-slate-400">Visualize decision makers, champions, and tech contacts categorized by enterprise client accounts.</p>
+        </div>
+        <div class="text-xs text-slate-400">
+          Click any card to open executive profile
+        </div>
+      </div>
+
+      <!-- Account Matrix Container -->
+      <div id="accountMatrixContainer" class="space-y-8">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: AI SMART CARD SCANNER (OCR ENGINE) -->
+    <!-- ========================================== -->
+    <section id="viewScanner" class="hidden space-y-6">
+      <div class="max-w-4xl mx-auto space-y-6">
+        
+        <div class="text-center space-y-2">
+          <div class="inline-flex items-center justify-center p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 text-blue-400 mb-1">
+            <i data-lucide="scan-face" class="w-8 h-8"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-white">Smart Business Card Scanner</h2>
+          <p class="text-sm text-slate-400 max-w-lg mx-auto">
+            Upload or snap a photo of any physical namecard. Our client-side OCR engine extracts contact details, company, phone, email, and automatically categorizes tech tags.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          
+          <!-- Dropzone & Card Upload Box -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+              <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-400"></i> 1. Upload Card Image
+            </h3>
+
+            <div
+              id="dropzone"
+              class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-8 text-center cursor-pointer transition-all bg-slate-950/40 hover:bg-slate-900/60 group"
+            >
+              <input type="file" id="scannerFileInput" accept="image/*" capture="environment" class="hidden">
+              <div class="w-12 h-12 rounded-full bg-slate-800 group-hover:bg-blue-600/20 group-hover:text-blue-400 flex items-center justify-center mx-auto text-slate-400 transition-all mb-3">
+                <i data-lucide="camera" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-medium text-slate-200">Tap to Snap Photo or Upload Card</p>
+              <p class="text-xs text-slate-400 mt-1">Direct camera capture on iPhone & mobile</p>
+            </div>
+
+            <!-- OCR Progress Bar -->
+            <div id="ocrProgressContainer" class="hidden space-y-2 pt-2">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span id="ocrStatusText" class="flex items-center gap-1.5">
+                  <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin text-blue-400"></i> Processing OCR...
+                </span>
+                <span id="ocrPercentText" class="font-mono text-blue-400 font-bold">0%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div id="ocrProgressBar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full w-0 transition-all duration-300"></div>
+              </div>
+            </div>
+
+            <!-- Image Preview -->
+            <div id="scannerImagePreviewBox" class="hidden relative rounded-xl overflow-hidden border border-slate-700 aspect-video bg-black/40">
+              <img id="scannerImagePreview" src="" alt="Business Card Preview" class="w-full h-full object-contain">
+              <button id="btnClearScannedImage" class="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-lg transition-all text-xs" title="Remove image">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Sample Card Quick Load Buttons -->
+            <div class="pt-2 border-t border-slate-800">
+              <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Or Try Instant Sample Cards:</p>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <button id="btnLoadSample1" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-left border border-slate-700 text-slate-300">
+                  <div class="font-medium text-blue-400">CTO, CyberBank Corp</div>
+                  <div class="text-[10px] text-slate-400">Elena Rostova</div>
+                </button>
+                <button id="btnLoadSample2" class="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-left border border-slate-700 text-slate-300">
+                  <div class="font-medium text-emerald-400">Head of AI, QuantumFab</div>
+                  <div class="text-[10px] text-slate-400">Arthur Wei</div>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Parsed Fields & Live Verification Form -->
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> 2. Auto-Extracted Details
+              </h3>
+              <span class="text-[11px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">Editable</span>
+            </div>
+
+            <form id="scannerForm" class="space-y-3 text-xs">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">Full Name *</label>
+                  <input type="text" id="scanName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Johnathan Doe">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Job Title *</label>
+                  <input type="text" id="scanTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. VP Infrastructure">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">Company / Account *</label>
+                  <input type="text" id="scanCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Acme Corp">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Stakeholder Role</label>
+                  <select id="scanRole" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none">
+                    <option value="Technical Champion">Technical Champion</option>
+                    <option value="Economic Buyer">Economic Buyer</option>
+                    <option value="Influencer">Influencer</option>
+                    <option value="Gatekeeper">Gatekeeper</option>
+                    <option value="End User">End User</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">Email</label>
+                  <input type="email" id="scanEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="john@company.com">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">Phone</label>
+                  <input type="text" id="scanPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+1 (555) 000-0000">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">Office Address / Location</label>
+                <input type="text" id="scanAddress" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="City, State, Country">
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">Technology Interests (Comma-separated)</label>
+                <input type="text" id="scanTech" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="OpenShift, watsonx, Kubernetes, FinOps">
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">ATL Meeting Notes & Strategy</label>
+                <textarea id="scanNotes" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="Context from recent meeting..."></textarea>
+              </div>
+
+              <div class="pt-3">
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4"></i> Save to CardVault
+                </button>
+              </div>
+            </form>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 4: TECH DOMAIN & COVERAGE ANALYTICS   -->
+    <!-- ========================================== -->
+    <section id="viewAnalytics" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-5 h-5 text-indigo-400"></i> ATL Account & Tech Stack Coverage
+          </h2>
+          <p class="text-xs text-slate-400">Analyze relationship distribution, tech adoption interest across all client accounts.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Tech Cloud Card -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="cpu" class="w-4 h-4 text-blue-400"></i> Top Technology Interests
+          </h3>
+          <div id="analyticsTechList" class="space-y-2.5 text-xs">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Stakeholder Role Mix -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i> Stakeholder Mix
+          </h3>
+          <div id="analyticsRoleList" class="space-y-3 text-xs">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Account Engagement -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i> Engagement & Meeting Cadence
+          </h3>
+          <div id="analyticsAccountCadence" class="space-y-3 text-xs">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 3D CARD DETAIL & FLIP VIEWER       -->
+  <!-- ========================================== -->
+  <div id="cardDetailModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-modal max-w-2xl w-full rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-slate-400 uppercase tracking-wider">Business Card Inspector</span>
+          <span id="modalStakeholderBadge" class="text-[10px] px-2 py-0.5 rounded-full font-semibold"></span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="btnModalFlip" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-blue-400 border border-slate-700 flex items-center gap-1.5 transition-all">
+            <i data-lucide="rotate-3d" class="w-3.5 h-3.5"></i> Flip Card (Front/Back)
+          </button>
+          <button id="btnModalClose" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-6">
+        
+        <!-- 3D Interactive Card Preview Container -->
+        <div class="card-perspective max-w-md mx-auto">
+          <div id="modal3DCard" class="business-card-3d cursor-pointer shimmer-effect" title="Click card to flip!">
+            
+            <!-- Front Face -->
+            <div id="modalCardFront" class="card-face p-5 flex flex-col justify-between text-white relative">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h4 id="modalFrontName" class="text-lg font-bold tracking-tight">Name</h4>
+                  <p id="modalFrontTitle" class="text-xs text-blue-300 font-medium">Job Title</p>
+                </div>
+                <div id="modalFrontCompanyLogo" class="text-right">
+                  <span id="modalFrontCompany" class="text-xs font-extrabold tracking-wider uppercase text-slate-300">COMPANY</span>
+                </div>
+              </div>
+
+              <div class="space-y-1 text-[11px] text-slate-300">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="mail" class="w-3 h-3 text-blue-400"></i>
+                  <span id="modalFrontEmail" class="font-mono">email</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i data-lucide="phone" class="w-3 h-3 text-emerald-400"></i>
+                  <span id="modalFrontPhone" class="font-mono">phone</span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] text-slate-400">
+                <span id="modalFrontAddress">Address</span>
+                <span class="font-mono text-blue-300">TAP TO FLIP ↻</span>
+              </div>
+            </div>
+
+            <!-- Back Face -->
+            <div id="modalCardBack" class="card-face card-face-back p-5 flex flex-col justify-between text-white bg-slate-900 border border-slate-700">
+              <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                <span class="text-xs font-semibold text-slate-300">Technical Interests & Skills</span>
+                <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i>
+              </div>
+              
+              <div id="modalBackTechTags" class="flex flex-wrap gap-1.5 my-auto">
+                <!-- Tech tags injected -->
+              </div>
+
+              <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] text-slate-400">
+                <span id="modalBackSentiment" class="text-emerald-400 font-semibold">Champion</span>
+                <span class="font-mono text-slate-400">ATL VAULT ID: #<span id="modalBackId"></span></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Quick Action Bar -->
+        <div class="grid grid-cols-4 gap-2 text-xs">
+          <a id="btnActionEmail" href="#" class="p-2.5 rounded-xl bg-slate-800 hover:bg-blue-600/20 hover:text-blue-400 border border-slate-700 flex flex-col items-center justify-center gap-1 transition-all">
+            <i data-lucide="mail" class="w-4 h-4 text-blue-400"></i>
+            <span>Send Email</span>
+          </a>
+          <a id="btnActionCall" href="#" class="p-2.5 rounded-xl bg-slate-800 hover:bg-emerald-600/20 hover:text-emerald-400 border border-slate-700 flex flex-col items-center justify-center gap-1 transition-all">
+            <i data-lucide="phone-call" class="w-4 h-4 text-emerald-400"></i>
+            <span>Call</span>
+          </a>
+          <button id="btnActionVCard" class="p-2.5 rounded-xl bg-slate-800 hover:bg-indigo-600/20 hover:text-indigo-400 border border-slate-700 flex flex-col items-center justify-center gap-1 transition-all">
+            <i data-lucide="contact" class="w-4 h-4 text-indigo-400"></i>
+            <span>Export .VCF</span>
+          </button>
+          <button id="btnActionQR" class="p-2.5 rounded-xl bg-slate-800 hover:bg-amber-600/20 hover:text-amber-400 border border-slate-700 flex flex-col items-center justify-center gap-1 transition-all">
+            <i data-lucide="qr-code" class="w-4 h-4 text-amber-400"></i>
+            <span>Mobile QR</span>
+          </button>
+        </div>
+
+        <!-- Scanned Business Card Original Photo Box (Hidden if no photo) -->
+        <div id="modalScannedPhotoSection" class="hidden bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="image" class="w-3.5 h-3.5 text-emerald-400"></i> Original Scanned Namecard Photo
+            </span>
+            <a id="modalScannedPhotoLink" href="#" target="_blank" class="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
+              <span>Open in Google Drive / New Tab</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+          </div>
+          <div class="rounded-lg overflow-hidden border border-slate-800 max-h-56 bg-black/40 flex items-center justify-center">
+            <img id="modalScannedPhotoImg" src="" alt="Scanned Card" class="max-h-56 w-auto object-contain">
+          </div>
+        </div>
+
+        <!-- Detailed Notes & Strategy Log -->
+        <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="notebook-pen" class="w-3.5 h-3.5 text-blue-400"></i> ATL Architecture Notes & Strategy
+            </span>
+            <span id="modalLastMetBadge" class="text-[11px] text-slate-400"></span>
+          </div>
+          <p id="modalNotesText" class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-800/80"></p>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
+        <button id="btnModalDeleteCard" class="px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-950/40 rounded-lg transition-all flex items-center gap-1.5 border border-rose-900/50">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Card
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="btnModalEditCard" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Details
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT CARD FORM                -->
+  <!-- ========================================== -->
+  <div id="cardEditModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-modal max-w-xl w-full rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 id="editModalTitle" class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-blue-400"></i> Add New Client Card
+        </h3>
+        <button id="btnEditModalClose" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="cardForm" class="p-6 overflow-y-auto space-y-4 text-xs">
+        <input type="hidden" id="formCardId">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Full Name *</label>
+            <input type="text" id="formName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Dr. Jane Smith">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Job Title *</label>
+            <input type="text" id="formTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Chief Architect">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Company / Account Name *</label>
+            <input type="text" id="formCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Apex Global Bank">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Department</label>
+            <input type="text" id="formDepartment" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Cloud Infrastructure">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Stakeholder Role</label>
+            <select id="formRole" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none">
+              <option value="Technical Champion">Technical Champion</option>
+              <option value="Economic Buyer">Economic Buyer</option>
+              <option value="Influencer">Influencer</option>
+              <option value="Gatekeeper">Gatekeeper</option>
+              <option value="End User">End User</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Sentiment / Relationship</label>
+            <select id="formSentiment" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none">
+              <option value="Strong Champion">Strong Champion</option>
+              <option value="Champion">Champion</option>
+              <option value="Neutral">Neutral</option>
+              <option value="Skeptic">Skeptic</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Email</label>
+            <input type="email" id="formEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="jane.smith@apex.com">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Phone</label>
+            <input type="text" id="formPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+1 (415) 555-0199">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Office Address</label>
+          <input type="text" id="formAddress" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="100 Market St, San Francisco, CA">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">LinkedIn Profile URL</label>
+          <input type="url" id="formLinkedin" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="https://linkedin.com/in/...">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Tech Stack & Interests (Comma-separated)</label>
+          <input type="text" id="formTech" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="OpenShift, watsonx, Kafka, FinOps">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Visual Card Theme</label>
+            <select id="formTheme" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none">
+              <option value="executive-navy">Executive Navy</option>
+              <option value="cyber-slate">Cyber Slate</option>
+              <option value="emerald-matrix">Emerald Matrix</option>
+              <option value="gold-prestige">Gold Prestige</option>
+              <option value="crimson-shield">Crimson Shield</option>
+              <option value="electric-violet">Electric Violet</option>
+              <option value="teal-modern">Teal Modern</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Last Met Date</label>
+            <input type="date" id="formLastMet" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">ATL Notes & Strategy</label>
+          <textarea id="formNotes" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="Architecture review notes, key drivers, blockers..."></textarea>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" id="btnCancelEdit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20">Save Card</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: MOBILE QR CODE SHARE                -->
+  <!-- ========================================== -->
+  <div id="qrModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-modal max-w-sm w-full rounded-2xl border border-slate-700/80 shadow-2xl p-6 text-center space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="qr-code" class="w-4 h-4 text-amber-400"></i> Scan to Save Contact
+        </h3>
+        <button id="btnQRClose" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-4 bg-white rounded-xl inline-block shadow-lg mx-auto" id="qrcodeCanvas"></div>
+
+      <div class="space-y-1">
+        <h4 id="qrContactName" class="text-base font-bold text-white"></h4>
+        <p id="qrContactCompany" class="text-xs text-slate-400"></p>
+      </div>
+
+      <p class="text-[11px] text-slate-400">
+        Point your phone camera to instantly add this client to your mobile contacts via vCard standard.
+      </p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: IPHONE CONNECT & LIVE SYNC          -->
+  <!-- ========================================== -->
+  <div id="phoneConnectModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-modal max-w-md w-full rounded-2xl border border-slate-700/80 shadow-2xl p-6 text-center space-y-5">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i> Open ATL CardVault on iPhone
+        </h3>
+        <button id="btnPhoneConnectClose" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-4 bg-white rounded-2xl inline-block shadow-2xl mx-auto border-4 border-slate-800" id="phoneConnectQRCanvas"></div>
+
+      <div class="space-y-1">
+        <p class="text-xs font-semibold text-slate-200">Scan with your iPhone Camera</p>
+        <p id="phoneConnectUrlText" class="text-[11px] font-mono text-blue-400 break-all select-all bg-slate-950 p-2 rounded-lg border border-slate-800"></p>
+      </div>
+
+      <div class="text-left bg-slate-900/90 rounded-xl p-3 border border-slate-800 text-[11px] text-slate-300 space-y-2">
+        <div class="font-bold text-slate-200 flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> iPhone Superpowers:
+        </div>
+        <ul class="space-y-1 list-disc list-inside text-slate-400">
+          <li><strong>Direct Camera OCR:</strong> Snap client business cards instantly using iPhone's camera.</li>
+          <li><strong>1-Tap Apple Contacts:</strong> Save any client straight into iOS Contacts (.vcf).</li>
+          <li><strong>PWA Fullscreen:</strong> In Safari, tap <span class="text-blue-400 font-semibold">Share → Add to Home Screen</span> for native app feel.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: GOOGLE DRIVE & SHEET CLOUD SYNC     -->
+  <!-- ========================================== -->
+  <div id="cloudSyncModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-modal max-w-lg w-full rounded-2xl border border-slate-700/80 shadow-2xl p-6 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="cloud" class="w-4 h-4 text-blue-400"></i> Google Drive & Sheet Sync
+        </h3>
+        <button id="btnCloudSyncClose" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <p class="text-slate-300 leading-relaxed">
+          Connect your personal Google Apps Script Web App URL to automatically backup cards and photos to <span class="text-emerald-400 font-semibold">Google Sheets</span> and <span class="text-blue-400 font-semibold">Google Drive</span>.
+        </p>
+
+        <div>
+          <label class="block text-slate-400 mb-1.5 font-semibold">Google Apps Script Web App URL</label>
+          <input
+            type="url"
+            id="inputGoogleScriptUrl"
+            placeholder="https://script.google.com/macros/s/.../exec"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-slate-200 focus:border-blue-500 focus:outline-none font-mono text-[11px]"
+          >
+          <p class="text-[10px] text-slate-500 mt-1">Get this URL from Google Sheets → Extensions → Apps Script → Deploy as Web App.</p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button id="btnSaveSyncUrl" class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-blue-500/20">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i> Save & Test URL
+          </button>
+          <button id="btnPullFromCloud" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium transition-all flex items-center justify-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400" id="iconPullSync"></i> Pull from Sheet
+          </button>
+        </div>
+
+        <!-- Sync Status Alert -->
+        <div id="syncStatusBox" class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Current Status:</span>
+          <span id="syncStatusText" class="font-mono text-amber-400 font-semibold">Not Configured</span>
+        </div>
+
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+          <p class="font-semibold text-slate-300">💡 How it works:</p>
+          <p>• Whenever you snap a card on your iPhone, the card image is sent to your <strong>Google Drive</strong> and contact details are appended to your <strong>Google Sheet</strong>.</p>
+          <p>• On your laptop, click <strong>"Pull from Sheet"</strong> to immediately fetch all newly scanned cards!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 border border-blue-500/30 text-white px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400" id="toastIcon"></i>
+    <span id="toastMessage">Action completed successfully</span>
+  </div>
+
+  <script src="demo-data.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>
