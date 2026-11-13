@@ -277,11 +277,42 @@ class CardVaultApp {
     });
   }
 
+  // Compress large camera photos to fast-uploadable JPEG (~150KB)
+  compressImage(dataUrl, maxDimension = 1200, quality = 0.75) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
   // Live OCR Image Extraction with intelligent regex entity recognizer
   processCardImage(file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageDataUrl = e.target.result;
+    reader.onload = async (e) => {
+      const rawDataUrl = e.target.result;
+      // Compress image for ultra-fast OCR & Google Drive upload
+      const compressedDataUrl = await this.compressImage(rawDataUrl, 1200, 0.75);
+
       const previewImg = document.getElementById('scannerImagePreview');
       const previewBox = document.getElementById('scannerImagePreviewBox');
       const dropzone = document.getElementById('dropzone');
@@ -290,9 +321,9 @@ class CardVaultApp {
       const percentText = document.getElementById('ocrPercentText');
       const statusText = document.getElementById('ocrStatusText');
 
-      this.currentScannedImageDataUrl = imageDataUrl;
+      this.currentScannedImageDataUrl = compressedDataUrl;
       if (previewImg && previewBox && dropzone) {
-        previewImg.src = imageDataUrl;
+        previewImg.src = compressedDataUrl;
         previewBox.classList.remove('hidden');
         dropzone.classList.add('hidden');
       }
@@ -301,7 +332,7 @@ class CardVaultApp {
 
       if (window.Tesseract) {
         Tesseract.recognize(
-          imageDataUrl,
+          compressedDataUrl,
           'eng',
           {
             logger: (m) => {
@@ -1188,6 +1219,10 @@ class CardVaultApp {
       };
       this.cards.unshift(newCard);
       this.showToast(`Added ${name} to CardVault`);
+
+      if (this.googleScriptUrl) {
+        this.pushCardToGoogleSheet(newCard);
+      }
     }
 
     this.saveData();
