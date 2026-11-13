@@ -67,10 +67,13 @@ function doPost(e) {
     // 處理刪除名片 (Action: Delete)
     if (data.action === 'delete') {
       const values = sheet.getDataRange().getValues();
-      for (let i = 1; i < values.length; i++) {
-        if (String(values[i][0]) === String(data.id) || (String(values[i][1]) === String(data.name) && String(values[i][3]) === String(data.company))) {
+      // 從最後一行往前比對刪除（避免索引位移問題）
+      for (let i = values.length - 1; i >= 1; i--) {
+        const rowId = String(values[i][0]).trim();
+        const rowName = String(values[i][1]).trim();
+        if ((data.id && rowId === String(data.id).trim()) ||
+            (data.name && rowName.toLowerCase() === String(data.name).trim().toLowerCase())) {
           sheet.deleteRow(i + 1);
-          break;
         }
       }
       return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Card deleted from Sheet' })).setMimeType(ContentService.MimeType.JSON);
