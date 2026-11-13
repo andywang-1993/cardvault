@@ -524,6 +524,7 @@ class CardVaultApp {
     document.getElementById('viewScanner')?.classList.toggle('hidden', tabId !== 'scanner');
     document.getElementById('viewAnalytics')?.classList.toggle('hidden', tabId !== 'analytics');
 
+    if (tabId === 'cards') this.render();
     if (tabId === 'orgMap') this.renderOrgMap();
     if (tabId === 'analytics') this.renderAnalytics();
 
@@ -1597,27 +1598,29 @@ class CardVaultApp {
       const res = await fetch(this.googleScriptUrl);
       const data = await res.json();
       if (data.status === 'success' && Array.isArray(data.cards)) {
-        // Merge cards: keep existing local cards, add newly discovered cards from Google Sheet
-        const existingIds = new Set(this.cards.map(c => c.id));
-        let addedCount = 0;
-        data.cards.forEach(card => {
-          if (!existingIds.has(card.id)) {
-            this.cards.unshift(card);
-            existingIds.add(card.id);
-            addedCount++;
-          }
-        });
+        // Full 2-way sync: Google Sheet is the Source of Truth
+        // When you edit rows directly in Google Sheet, CardVault adopts the latest edits!
+        if (data.cards.length > 0) {
+          // Preserve local VIP favorite stars if set locally
+          const favMap = new Map(this.cards.map(c => [c.id, c.favorite]));
+          this.cards = data.cards.map(c => {
+            if (favMap.has(c.id)) {
+              c.favorite = favMap.get(c.id);
+            }
+            return c;
+          });
 
-        if (addedCount > 0) {
           this.saveData();
           this.populateFilterOptions();
           this.render();
-          this.showToast(`Synced! Pulled ${addedCount} new cards from Google Sheet`);
-          if (window.confetti && !silent) {
-            window.confetti({ particleCount: 50, spread: 70, origin: { y: 0.7 } });
+          if (!silent) {
+            this.showToast(`Synced ${this.cards.length} cards from Google Sheet!`);
+            if (window.confetti) {
+              window.confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+            }
           }
         } else if (!silent) {
-          this.showToast('Already up to date with Google Sheet');
+          this.showToast('Google Sheet is currently empty');
         }
       }
     } catch (err) {
