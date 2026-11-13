@@ -32,6 +32,16 @@ class CardVaultApp {
     this.render();
     this.updateStats();
     this.updateHeaderSyncStatus();
+
+    // Auto-sync from Google Sheet on start and when returning to tab
+    if (this.googleScriptUrl) {
+      this.pullFromGoogleSheet(true);
+    }
+    window.addEventListener('focus', () => {
+      if (this.googleScriptUrl) {
+        this.pullFromGoogleSheet(true);
+      }
+    });
     
     // Initialize Lucide Icons
     if (window.lucide) {
@@ -1465,10 +1475,12 @@ class CardVaultApp {
     }
   }
 
-  async pullFromGoogleSheet() {
+  async pullFromGoogleSheet(silent = false) {
     if (!this.googleScriptUrl) {
-      alert('Please configure your Google Apps Script Web App URL first.');
-      this.openCloudSyncModal();
+      if (!silent) {
+        alert('Please configure your Google Apps Script Web App URL first.');
+        this.openCloudSyncModal();
+      }
       return;
     }
 
@@ -1490,17 +1502,23 @@ class CardVaultApp {
           }
         });
 
-        this.saveData();
-        this.populateFilterOptions();
-        this.render();
-        this.showToast(`Synced! Pulled ${addedCount} new cards from Google Sheet`);
-        if (window.confetti && addedCount > 0) {
-          window.confetti({ particleCount: 50, spread: 70, origin: { y: 0.7 } });
+        if (addedCount > 0) {
+          this.saveData();
+          this.populateFilterOptions();
+          this.render();
+          this.showToast(`Synced! Pulled ${addedCount} new cards from Google Sheet`);
+          if (window.confetti && !silent) {
+            window.confetti({ particleCount: 50, spread: 70, origin: { y: 0.7 } });
+          }
+        } else if (!silent) {
+          this.showToast('Already up to date with Google Sheet');
         }
       }
     } catch (err) {
       console.error('Failed to pull from Google Sheet:', err);
-      this.showToast('Could not fetch from Google Sheet (check URL permissions)');
+      if (!silent) {
+        this.showToast('Could not fetch from Google Sheet (check URL permissions)');
+      }
     } finally {
       icon?.classList.remove('animate-spin');
     }
