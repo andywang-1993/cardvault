@@ -1651,7 +1651,7 @@ class CardVaultApp {
     icon?.classList.add('animate-spin');
 
     try {
-      const res = await fetch(this.googleScriptUrl);
+      const res = await fetch(this.googleScriptUrl, { redirect: 'follow' });
       const data = await res.json();
       if (data.status === 'success' && Array.isArray(data.cards)) {
         // Full 2-way sync: Google Sheet is the Source of Truth
