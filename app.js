@@ -1079,7 +1079,13 @@ class CardVaultApp {
     if (!card) return;
 
     this.selectedCardId = cardId;
+    this.isDeleteConfirming = false;
     const modal = document.getElementById('cardDetailModal');
+    const deleteBtn = document.getElementById('btnModalDeleteCard');
+    if (deleteBtn) {
+      deleteBtn.innerHTML = `<i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Card`;
+      deleteBtn.className = "px-3 py-2 text-xs text-rose-400 hover:bg-rose-950/40 rounded-lg transition-all flex items-center gap-1.5 border border-rose-900/50 touch-manipulation cursor-pointer";
+    }
     if (!modal) return;
 
     // Reset flip
@@ -1234,13 +1240,57 @@ class CardVaultApp {
   }
 
   deleteCard(cardId) {
-    if (!confirm('Are you sure you want to delete this business card?')) return;
+    const card = this.cards.find(c => c.id === cardId);
+    const deleteBtn = document.getElementById('btnModalDeleteCard');
+
+    // 2-Step mobile-friendly confirmation (no window.confirm popup needed)
+    if (!this.isDeleteConfirming) {
+      this.isDeleteConfirming = true;
+      if (deleteBtn) {
+        deleteBtn.innerHTML = `⚠️ Confirm Delete?`;
+        deleteBtn.className = "px-3 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-lg transition-all flex items-center gap-1.5 border border-rose-400 animate-pulse touch-manipulation cursor-pointer";
+      }
+      setTimeout(() => {
+        if (this.isDeleteConfirming && deleteBtn) {
+          this.isDeleteConfirming = false;
+          deleteBtn.innerHTML = `<i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Card`;
+          deleteBtn.className = "px-3 py-2 text-xs text-rose-400 hover:bg-rose-950/40 rounded-lg transition-all flex items-center gap-1.5 border border-rose-900/50 touch-manipulation cursor-pointer";
+          if (window.lucide) lucide.createIcons();
+        }
+      }, 4000);
+      return;
+    }
+
+    // Execute deletion
+    this.isDeleteConfirming = false;
     this.cards = this.cards.filter(c => c.id !== cardId);
     this.saveData();
+
+    // Also delete from Google Sheet if configured
+    if (this.googleScriptUrl && card) {
+      this.deleteCardFromGoogleSheet(card);
+    }
+
     this.closeDetailModal();
     this.populateFilterOptions();
     this.render();
     this.showToast('Card deleted from vault');
+  }
+
+  async deleteCardFromGoogleSheet(card) {
+    if (!this.googleScriptUrl) return;
+    try {
+      await fetch(this.googleScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete', id: card.id, name: card.name, company: card.company }),
+        mode: 'no-cors',
+        keepalive: true
+      });
+      console.log('Delete request sent to Google Sheet for:', card.name);
+    } catch (err) {
+      console.warn('Google Sheet delete notice:', err);
+    }
   }
 
   toggleFavorite(cardId) {

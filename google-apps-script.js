@@ -63,6 +63,19 @@ function doPost(e) {
     const folder = setup.folder;
 
     const data = JSON.parse(e.postData.contents);
+
+    // 處理刪除名片 (Action: Delete)
+    if (data.action === 'delete') {
+      const values = sheet.getDataRange().getValues();
+      for (let i = 1; i < values.length; i++) {
+        if (String(values[i][0]) === String(data.id) || (String(values[i][1]) === String(data.name) && String(values[i][3]) === String(data.company))) {
+          sheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Card deleted from Sheet' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     let photoUrl = data.cardFrontImage || '';
 
     // 如果前端有傳送 Base64 格式的名片照片，自動轉存進 Google Drive
