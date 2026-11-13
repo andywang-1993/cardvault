@@ -82,12 +82,17 @@ class CardVaultApp {
     document.getElementById('tabScanner')?.addEventListener('click', () => this.switchTab('scanner'));
     document.getElementById('tabAnalytics')?.addEventListener('click', () => this.switchTab('analytics'));
 
-    // Global Search
+    // Global Search (Desktop & Mobile)
     const searchInput = document.getElementById('globalSearchInput');
-    searchInput?.addEventListener('input', (e) => {
-      this.filters.search = e.target.value.toLowerCase().trim();
+    const mobileSearchInput = document.getElementById('mobileSearchInput');
+    const handleSearch = (val) => {
+      this.filters.search = val.toLowerCase().trim();
+      if (searchInput && searchInput.value !== val) searchInput.value = val;
+      if (mobileSearchInput && mobileSearchInput.value !== val) mobileSearchInput.value = val;
       this.render();
-    });
+    };
+    searchInput?.addEventListener('input', (e) => handleSearch(e.target.value));
+    mobileSearchInput?.addEventListener('input', (e) => handleSearch(e.target.value));
 
     // Keyboard shortcut for search
     window.addEventListener('keydown', (e) => {
@@ -691,11 +696,14 @@ class CardVaultApp {
             </div>
             
             <div class="flex items-center gap-1.5">
-              <button class="btn-toggle-fav p-1.5 text-slate-500 hover:text-amber-400 transition-colors" data-id="${c.id}" title="Toggle VIP Status">
-                <i data-lucide="star" class="w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-400' : ''}"></i>
+              <button class="btn-toggle-fav p-1.5 text-slate-500 hover:text-amber-400 transition-colors touch-manipulation" data-id="${c.id}" title="Toggle VIP Status">
+                <i data-lucide="star" class="w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-400' : ''} pointer-events-none"></i>
               </button>
-              <button class="btn-card-menu p-1.5 text-slate-500 hover:text-slate-200 transition-colors" data-id="${c.id}" title="Card Details">
-                <i data-lucide="maximize-2" class="w-4 h-4"></i>
+              <button class="btn-quick-delete p-1.5 text-slate-500 hover:text-rose-400 transition-colors touch-manipulation" data-id="${c.id}" title="Delete Card">
+                <i data-lucide="trash-2" class="w-4 h-4 pointer-events-none"></i>
+              </button>
+              <button class="btn-card-menu p-1.5 text-slate-500 hover:text-slate-200 transition-colors touch-manipulation" data-id="${c.id}" title="Card Details">
+                <i data-lucide="maximize-2" class="w-4 h-4 pointer-events-none"></i>
               </button>
             </div>
           </div>
@@ -782,6 +790,13 @@ class CardVaultApp {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleFavorite(btn.dataset.id);
+      });
+    });
+
+    container.querySelectorAll('.btn-quick-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.directDeleteCard(btn.dataset.id);
       });
     });
 
@@ -1239,42 +1254,33 @@ class CardVaultApp {
     this.render();
   }
 
-  deleteCard(cardId) {
+  directDeleteCard(cardId) {
     const card = this.cards.find(c => c.id === cardId);
-    const deleteBtn = document.getElementById('btnModalDeleteCard');
+    if (!card) return;
 
-    // 2-Step mobile-friendly confirmation (no window.confirm popup needed)
-    if (!this.isDeleteConfirming) {
-      this.isDeleteConfirming = true;
-      if (deleteBtn) {
-        deleteBtn.innerHTML = `⚠️ Confirm Delete?`;
-        deleteBtn.className = "px-3 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-lg transition-all flex items-center gap-1.5 border border-rose-400 animate-pulse touch-manipulation cursor-pointer";
-      }
-      setTimeout(() => {
-        if (this.isDeleteConfirming && deleteBtn) {
-          this.isDeleteConfirming = false;
-          deleteBtn.innerHTML = `<i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Card`;
-          deleteBtn.className = "px-3 py-2 text-xs text-rose-400 hover:bg-rose-950/40 rounded-lg transition-all flex items-center gap-1.5 border border-rose-900/50 touch-manipulation cursor-pointer";
-          if (window.lucide) lucide.createIcons();
-        }
-      }, 4000);
-      return;
-    }
+    // Record deleted ID to prevent auto-sync resurrection
+    try {
+      const deletedIds = JSON.parse(localStorage.getItem('atl_deleted_ids') || '[]');
+      deletedIds.push(card.id);
+      localStorage.setItem('atl_deleted_ids', JSON.stringify(deletedIds));
+    } catch (e) {}
 
-    // Execute deletion
-    this.isDeleteConfirming = false;
     this.cards = this.cards.filter(c => c.id !== cardId);
     this.saveData();
 
-    // Also delete from Google Sheet if configured
-    if (this.googleScriptUrl && card) {
+    // Delete from Google Sheet
+    if (this.googleScriptUrl) {
       this.deleteCardFromGoogleSheet(card);
     }
 
-    this.closeDetailModal();
     this.populateFilterOptions();
     this.render();
-    this.showToast('Card deleted from vault');
+    this.showToast(`Deleted ${card.name} from vault`);
+  }
+
+  deleteCard(cardId) {
+    this.directDeleteCard(cardId);
+    this.closeDetailModal();
   }
 
   async deleteCardFromGoogleSheet(card) {
@@ -1651,14 +1657,18 @@ class CardVaultApp {
         // Full 2-way sync: Google Sheet is the Source of Truth
         // When you edit rows directly in Google Sheet, CardVault adopts the latest edits!
         if (data.cards.length > 0) {
-          // Preserve local VIP favorite stars if set locally
+          const deletedIds = new Set(JSON.parse(localStorage.getItem('atl_deleted_ids') || '[]'));
           const favMap = new Map(this.cards.map(c => [c.id, c.favorite]));
-          this.cards = data.cards.map(c => {
-            if (favMap.has(c.id)) {
-              c.favorite = favMap.get(c.id);
-            }
-            return c;
-          });
+
+          // Filter out explicitly deleted cards so they never resurrect
+          this.cards = data.cards
+            .filter(c => !deletedIds.has(c.id))
+            .map(c => {
+              if (favMap.has(c.id)) {
+                c.favorite = favMap.get(c.id);
+              }
+              return c;
+            });
 
           this.saveData();
           this.populateFilterOptions();

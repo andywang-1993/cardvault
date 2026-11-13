@@ -58,65 +58,59 @@
 <body class="bg-[#0B0F17] text-slate-100 min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
 
   <!-- TOP HEADER -->
-  <header class="border-b border-slate-800 bg-[#0E1420]/80 sticky top-0 z-40 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+  <header class="border-b border-slate-800 bg-[#0E1420]/95 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
       
       <!-- Brand & Persona Tag -->
-      <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-xl">
-          <i data-lucide="credit-card" class="w-5 h-5"></i>
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-black text-sm sm:text-base flex-shrink-0">
+          <i data-lucide="credit-card" class="w-4 h-4 sm:w-5 sm:h-5"></i>
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">ATL CardVault</span>
-            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">Executive Rolodex</span>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="font-bold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent truncate">CardVault</span>
+            <span class="hidden sm:inline-block text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">ATL Pro</span>
           </div>
-          <p class="text-xs text-slate-400">Account Technical Leader • Client Stakeholder & Card Intelligence</p>
+          <p class="hidden sm:block text-xs text-slate-400 truncate">Account Technical Leader • Stakeholder & Card Intelligence</p>
         </div>
       </div>
 
-      <!-- Quick Search Bar -->
+      <!-- Quick Search Bar (Desktop) -->
       <div class="flex-1 max-w-md hidden md:block">
         <div class="relative">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-          <input 
-            type="text" 
+          <input
+            type="text"
             id="globalSearchInput"
-            placeholder="Search by name, company, role, tech stack (e.g., OpenShift, AI, FinOps)... [/]" 
-            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-10 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
+            placeholder="Search by name, company, role, tech stack... [/]"
+            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-10 py-1.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
           >
           <kbd class="hidden sm:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono bg-slate-800 border border-slate-700 text-slate-400 px-1.5 py-0.5 rounded">⌘K</kbd>
         </div>
       </div>
 
       <!-- Right Header Actions -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <!-- Google Cloud Sync Button -->
-        <button id="btnOpenCloudSync" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all shadow-md active:scale-95" title="Google Drive & Sheet Sync">
-          <i data-lucide="cloud" class="w-4 h-4 text-blue-400" id="headerCloudIcon"></i>
-          <span class="hidden sm:inline" id="headerCloudText">Google Sync</span>
+        <button id="btnOpenCloudSync" class="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition-all shadow-md active:scale-95 touch-manipulation" title="Google Drive & Sheet Sync">
+          <i data-lucide="cloud" class="w-4 h-4 text-blue-400 pointer-events-none" id="headerCloudIcon"></i>
+          <span class="hidden md:inline" id="headerCloudText">Google Sync</span>
         </button>
 
-        <!-- iPhone Quick Connect Button -->
-        <button id="btnOpenPhoneConnect" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all shadow-md active:scale-95" title="Open on iPhone">
-          <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
-          <span class="hidden sm:inline">iPhone</span>
+        <button id="btnOpenScanner" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/25 active:scale-95 touch-manipulation">
+          <i data-lucide="scan-line" class="w-4 h-4 pointer-events-none"></i>
+          <span>Scan</span>
         </button>
 
-        <button id="btnOpenScanner" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-600/25 active:scale-95">
-          <i data-lucide="scan-line" class="w-4 h-4"></i>
-          <span>Scan Card</span>
-        </button>
-
-        <button id="btnOpenAddModal" class="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-all">
+        <button id="btnOpenAddModal" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all">
           <i data-lucide="plus" class="w-4 h-4 text-blue-400"></i>
-          <span>New Contact</span>
+          <span>Add</span>
         </button>
 
         <!-- Export / Import Dropdown Trigger -->
         <div class="relative">
-          <button id="btnDataMenu" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-all" title="Data Export / Import">
-            <i data-lucide="hard-drive-download" class="w-4 h-4"></i>
+          <button id="btnDataMenu" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-all touch-manipulation" title="Data Menu">
+            <i data-lucide="hard-drive-download" class="w-4 h-4 pointer-events-none"></i>
           </button>
           
           <div id="dataDropdownMenu" class="hidden absolute right-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl py-1 z-50 text-xs">
@@ -141,50 +135,45 @@
     </div>
   </header>
 
-  <!-- SECONDARY BAR: STATS & NAVIGATION TABS -->
+  <!-- SECONDARY BAR: SCROLLABLE NAVIGATION TABS & METRICS -->
   <div class="border-b border-slate-800/70 bg-[#0C111C]">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2 overflow-x-auto">
       
-      <!-- View Navigation Tabs -->
-      <nav class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 self-start md:self-auto text-xs sm:text-sm">
-        <button id="tabCards" class="nav-tab active-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium transition-all bg-blue-600 text-white shadow">
-          <i data-lucide="layout-grid" class="w-4 h-4"></i>
-          <span>Card Deck</span>
-          <span id="badgeCardCount" class="bg-blue-800/80 text-[11px] px-1.5 py-0.2 rounded-full font-mono">0</span>
+      <!-- View Navigation Tabs (Smooth Scroll on Mobile) -->
+      <nav class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs flex-nowrap flex-shrink-0">
+        <button id="tabCards" class="nav-tab active-tab flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium transition-all bg-blue-600 text-white shadow whitespace-nowrap">
+          <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+          <span>Deck</span>
+          <span id="badgeCardCount" class="bg-blue-800/80 text-[10px] px-1.5 py-0.2 rounded-full font-mono">0</span>
         </button>
 
-        <button id="tabOrgMap" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all">
-          <i data-lucide="network" class="w-4 h-4"></i>
-          <span>Account Org Map</span>
+        <button id="tabOrgMap" class="nav-tab flex items-center gap-1.5 px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all whitespace-nowrap">
+          <i data-lucide="network" class="w-3.5 h-3.5"></i>
+          <span>Org Map</span>
         </button>
 
-        <button id="tabScanner" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all">
-          <i data-lucide="camera" class="w-4 h-4"></i>
-          <span>AI Card Scanner</span>
+        <button id="tabScanner" class="nav-tab flex items-center gap-1.5 px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all whitespace-nowrap">
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+          <span>Scanner</span>
         </button>
 
-        <button id="tabAnalytics" class="nav-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all">
-          <i data-lucide="pie-chart" class="w-4 h-4"></i>
-          <span>Tech & Coverage</span>
+        <button id="tabAnalytics" class="nav-tab flex items-center gap-1.5 px-3 py-1 rounded-lg text-slate-400 hover:text-slate-200 font-medium transition-all whitespace-nowrap">
+          <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+          <span>Tech</span>
         </button>
       </nav>
 
-      <!-- ATL Key Metrics Counters -->
-      <div class="flex items-center gap-4 text-xs">
-        <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/80">
+      <!-- ATL Key Metrics Counters (Desktop/Tablet) -->
+      <div class="hidden sm:flex items-center gap-3 text-xs flex-shrink-0">
+        <div class="flex items-center gap-1.5 bg-slate-900/50 px-2.5 py-1 rounded-lg border border-slate-800/80">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="text-slate-400">Champions:</span>
-          <span id="metricChampions" class="font-bold text-emerald-400 font-mono">0</span>
+          <span class="text-slate-400 text-[11px]">Champions:</span>
+          <span id="metricChampions" class="font-bold text-emerald-400 font-mono text-[11px]">0</span>
         </div>
-        <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/80">
-          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-          <span class="text-slate-400">Decision Makers:</span>
-          <span id="metricBuyers" class="font-bold text-amber-400 font-mono">0</span>
-        </div>
-        <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-800/80">
+        <div class="flex items-center gap-1.5 bg-slate-900/50 px-2.5 py-1 rounded-lg border border-slate-800/80">
           <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-          <span class="text-slate-400">Key Accounts:</span>
-          <span id="metricAccounts" class="font-bold text-blue-400 font-mono">0</span>
+          <span class="text-slate-400 text-[11px]">Accounts:</span>
+          <span id="metricAccounts" class="font-bold text-blue-400 font-mono text-[11px]">0</span>
         </div>
       </div>
 
@@ -199,55 +188,57 @@
     <!-- ========================================== -->
     <section id="viewCards" class="space-y-6">
       
-      <!-- Filter & Control Bar -->
-      <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xl backdrop-blur-sm">
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <span class="text-slate-400 font-medium mr-1 flex items-center gap-1">
-            <i data-lucide="filter" class="w-3.5 h-3.5 text-blue-400"></i> Filters:
-          </span>
+      <!-- Quick Search Bar (Mobile only) -->
+      <div class="block md:hidden">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input
+            type="text"
+            id="mobileSearchInput"
+            placeholder="Search name, company, tech tag..."
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+          >
+        </div>
+      </div>
 
+      <!-- Compact Responsive Filter Bar -->
+      <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2.5 shadow-xl backdrop-blur-sm">
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs w-full sm:w-auto">
           <!-- Account Filter -->
-          <select id="filterAccount" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
-            <option value="ALL">All Client Accounts</option>
+          <select id="filterAccount" class="flex-1 sm:flex-none bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="ALL">All Accounts</option>
           </select>
 
           <!-- Stakeholder Role Filter -->
-          <select id="filterRole" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
-            <option value="ALL">All Stakeholder Roles</option>
+          <select id="filterRole" class="flex-1 sm:flex-none bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="ALL">All Roles</option>
             <option value="Economic Buyer">Economic Buyer</option>
-            <option value="Technical Champion">Technical Champion</option>
+            <option value="Technical Champion">Tech Champion</option>
             <option value="Influencer">Influencer</option>
             <option value="Gatekeeper">Gatekeeper</option>
-            <option value="End User">End User</option>
-          </select>
-
-          <!-- Tech Tag Filter -->
-          <select id="filterTech" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
-            <option value="ALL">All Tech Interests</option>
           </select>
 
           <!-- Favorite Toggle -->
-          <button id="btnFilterFavorites" class="px-2.5 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:text-amber-400 hover:border-amber-400/40 transition-all flex items-center gap-1">
-            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span>VIP Only</span>
+          <button id="btnFilterFavorites" class="px-2 py-1 rounded-lg border border-slate-700 text-slate-300 hover:text-amber-400 transition-all flex items-center gap-1 text-xs touch-manipulation">
+            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 pointer-events-none"></i>
+            <span>VIP</span>
           </button>
         </div>
 
         <!-- View Display Mode & Sort -->
-        <div class="flex items-center gap-2">
-          <select id="sortCards" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
-            <option value="recent">Sort: Most Recently Met</option>
-            <option value="name">Sort: Name (A-Z)</option>
-            <option value="company">Sort: Company</option>
-            <option value="meetings">Sort: Most Engaged</option>
+        <div class="flex items-center justify-between w-full sm:w-auto gap-2 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+          <select id="sortCards" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none">
+            <option value="recent">Recent</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="company">Company</option>
           </select>
 
           <div class="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
-            <button id="btnViewGrid" class="p-1.5 rounded text-blue-400 bg-slate-700/60 transition-all" title="3D Card Grid View">
-              <i data-lucide="grid" class="w-4 h-4"></i>
+            <button id="btnViewGrid" class="p-1 rounded text-blue-400 bg-slate-700/60 transition-all" title="Card Grid">
+              <i data-lucide="grid" class="w-3.5 h-3.5"></i>
             </button>
-            <button id="btnViewList" class="p-1.5 rounded text-slate-400 hover:text-slate-200 transition-all" title="Compact Table View">
-              <i data-lucide="list" class="w-4 h-4"></i>
+            <button id="btnViewList" class="p-1 rounded text-slate-400 hover:text-slate-200 transition-all" title="List Table">
+              <i data-lucide="list" class="w-3.5 h-3.5"></i>
             </button>
           </div>
         </div>
