@@ -26,6 +26,26 @@ class CardVaultApp {
   }
 
   init() {
+    // Check if syncUrl is passed via URL query parameter (e.g. from QR code scan on mobile)
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncUrlParam = urlParams.get('syncUrl');
+    if (syncUrlParam) {
+      try {
+        const decodedUrl = decodeURIComponent(syncUrlParam);
+        if (decodedUrl.startsWith('https://script.google.com/')) {
+          this.googleScriptUrl = decodedUrl;
+          localStorage.setItem('atl_google_script_url', decodedUrl);
+          // Clean the address bar cleanly without page reload
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setTimeout(() => {
+            this.showToast('✅ 成功從電腦同步 Google Apps Script 雲端試算表設定！');
+          }, 600);
+        }
+      } catch (e) {
+        console.warn('Failed to parse syncUrl query param:', e);
+      }
+    }
+
     this.loadData();
     this.setupEventListeners();
     this.populateFilterOptions();
@@ -269,12 +289,13 @@ class CardVaultApp {
         department: "雲端架構組",
         role: "Technical Champion",
         email: "cooper.chen@cathaybk.com.tw",
-        phone: "+886 912 345 678",
+        phone: "+886 2 2725 9999",
+        ext: "1234",
         address: "台北市信義區松仁路7號",
         tech: "watsonx / GenAI, OpenShift, Kubernetes, Kafka, FinOps",
         notes: "關注核心系統現代化與微服務遷移，評估 OpenShift AI POC。"
       });
-      this.showToast("已載入範例名片：陳冠宇 Cooper Chen");
+      this.showToast("已載入範例名片：陳冠宇 Cooper Chen (分機 1234)");
     });
 
     document.getElementById('btnLoadSample2')?.addEventListener('click', () => {
@@ -288,16 +309,17 @@ class CardVaultApp {
         role: "Economic Buyer",
         email: "arthur.wei@mediatek.com",
         phone: "+886 3 567 8800",
+        ext: "8899",
         address: "新竹科學園區創新一路1號",
         tech: "Storage Scale / Ceph, GPU Orchestration, OpenShift AI, Linux on Z",
         notes: "評估 PB 級高速儲存架構與晶片模擬運算叢集擴容。"
       });
-      this.showToast("已載入範例名片：魏志宏 Arthur Wei");
+      this.showToast("已載入範例名片：魏志宏 Arthur Wei (分機 8899)");
     });
   }
 
-  // Compress large camera photos to fast-uploadable JPEG (~150KB)
-  compressImage(dataUrl, maxDimension = 1200, quality = 0.75) {
+  // Compress large camera photos to fast-uploadable JPEG (~80-120KB)
+  compressImage(dataUrl, maxDimension = 1000, quality = 0.65) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -380,7 +402,7 @@ class CardVaultApp {
     reader.readAsDataURL(file);
   }
 
-  // Heuristic parser for raw text extracted from cards (Chinese + English + Two-tier Dept)
+  // Heuristic parser for raw text extracted from cards (Chinese + English + Two-tier Dept + Ext)
   parseOCRTextAndFill(rawText) {
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
     
@@ -393,6 +415,7 @@ class CardVaultApp {
       department: '',
       email: '',
       phone: '',
+      ext: '',
       address: '',
       tech: []
     };
@@ -400,6 +423,7 @@ class CardVaultApp {
     // Regex matchers
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/i;
     const phoneRegex = /(\+?[\d\s\(\)-]{8,20})/;
+    const extRegex = /(?:ext|分機|#|轉|x)\.?\s*([0-9]{2,6})/i;
     const zhNameRegex = /([\u4e00-\u9fa5]{2,4})/;
 
     const emailMatch = rawText.match(emailRegex);
@@ -407,6 +431,9 @@ class CardVaultApp {
 
     const phoneMatch = rawText.match(phoneRegex);
     if (phoneMatch) parsed.phone = phoneMatch[0].trim();
+
+    const extMatch = rawText.match(extRegex);
+    if (extMatch) parsed.ext = extMatch[1].trim();
 
     // Chinese & English Name extraction heuristics
     const zhMatch = rawText.match(zhNameRegex);
@@ -457,6 +484,7 @@ class CardVaultApp {
       role: "Technical Champion",
       email: parsed.email || "",
       phone: parsed.phone || "",
+      ext: parsed.ext || "",
       address: parsed.address || "",
       tech: parsed.tech.join(", "),
       notes: "掃描於 ATL CardVault 智慧 OCR — " + new Date().toLocaleDateString()
@@ -473,6 +501,7 @@ class CardVaultApp {
     const elRole = document.getElementById('scanRole');
     const elEmail = document.getElementById('scanEmail');
     const elPhone = document.getElementById('scanPhone');
+    const elExt = document.getElementById('scanExt');
     const elAddress = document.getElementById('scanAddress');
     const elTech = document.getElementById('scanTech');
     const elNotes = document.getElementById('scanNotes');
@@ -486,6 +515,7 @@ class CardVaultApp {
     if (elRole) elRole.value = data.role || 'Technical Champion';
     if (elEmail) elEmail.value = data.email || '';
     if (elPhone) elPhone.value = data.phone || '';
+    if (elExt) elExt.value = data.ext || '';
     if (elAddress) elAddress.value = data.address || '';
     if (elTech) elTech.value = data.tech || '';
     if (elNotes) elNotes.value = data.notes || '';
@@ -502,6 +532,7 @@ class CardVaultApp {
     const role = document.getElementById('scanRole')?.value || 'Technical Champion';
     const email = document.getElementById('scanEmail')?.value.trim() || '';
     const phone = document.getElementById('scanPhone')?.value.trim() || '';
+    const ext = document.getElementById('scanExt')?.value.trim() || '';
     const address = document.getElementById('scanAddress')?.value.trim() || '';
     const techStr = document.getElementById('scanTech')?.value.trim() || '';
     const notes = document.getElementById('scanNotes')?.value.trim() || '';
@@ -528,6 +559,7 @@ class CardVaultApp {
       department: [division, department].filter(Boolean).join(' / ') || department || 'Client Team',
       email,
       phone,
+      ext,
       mobile: phone,
       address,
       website: company ? `https://www.${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : '',
@@ -548,9 +580,11 @@ class CardVaultApp {
     this.cards.unshift(newCard);
     this.saveData();
 
-    // Auto sync to Google Sheets / Drive in background if configured
+    // Auto sync to Google Sheets / Drive in background
     if (this.googleScriptUrl) {
       this.pushCardToGoogleSheet(newCard);
+    } else {
+      this.showToast(`⚠️ 名片已儲存本機！尚未設定 Google 試算表同步網址`);
     }
 
     this.currentScannedImageDataUrl = null;
@@ -798,7 +832,7 @@ class CardVaultApp {
 
                 <div class="space-y-1 text-[11px] text-slate-300">
                   ${c.email ? `<div class="flex items-center gap-2"><i data-lucide="mail" class="w-3 h-3 text-blue-400"></i><span class="font-mono truncate">${c.email}</span></div>` : ''}
-                  ${c.phone ? `<div class="flex items-center gap-2"><i data-lucide="phone" class="w-3 h-3 text-emerald-400"></i><span class="font-mono">${c.phone}</span></div>` : ''}
+                  ${c.phone ? `<div class="flex items-center gap-2"><i data-lucide="phone" class="w-3 h-3 text-emerald-400"></i><span class="font-mono">${c.phone}${c.ext ? ` #${c.ext}` : ''}</span></div>` : ''}
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-white/10 text-[9px] text-slate-400 font-mono">
@@ -922,7 +956,8 @@ class CardVaultApp {
             ${techTags}
           </td>
           <td class="py-3 px-4 text-slate-400 font-mono text-[11px]">
-            ${c.lastMet || '—'}
+            <div>${c.phone ? `${c.phone}${c.ext ? ` #${c.ext}` : ''}` : '—'}</div>
+            <div class="text-[10px] text-slate-500">${c.lastMet || '—'}</div>
           </td>
           <td class="py-3 px-4 text-right">
             <div class="inline-flex items-center gap-1" onclick="event.stopPropagation()">
@@ -1201,7 +1236,8 @@ class CardVaultApp {
     setText('modalFrontDepartment', deptDisplay);
     setText('modalFrontCompany', card.company);
     setText('modalFrontEmail', card.email || 'No email provided');
-    setText('modalFrontPhone', card.phone || 'No phone provided');
+    const phoneDisplay = card.phone ? `${card.phone}${card.ext ? ` (分機 ${card.ext})` : ''}` : 'No phone provided';
+    setText('modalFrontPhone', phoneDisplay);
     setText('modalFrontAddress', card.address || card.company);
 
     // Back face
@@ -1270,11 +1306,13 @@ class CardVaultApp {
     const elNameEn = document.getElementById('formNameEn');
     const elDivision = document.getElementById('formDivision');
     const elDepartment = document.getElementById('formDepartment');
+    const elExt = document.getElementById('formExt');
 
     if (elNameZh) elNameZh.value = card.nameZh || '';
     if (elNameEn) elNameEn.value = card.nameEn || '';
     if (elDivision) elDivision.value = card.division || '';
     if (elDepartment) elDepartment.value = card.department || '';
+    if (elExt) elExt.value = card.ext || '';
 
     document.getElementById('formTitle').value = card.title || '';
     document.getElementById('formCompany').value = card.company || '';
@@ -1310,6 +1348,7 @@ class CardVaultApp {
     const sentiment = document.getElementById('formSentiment').value;
     const email = document.getElementById('formEmail').value.trim();
     const phone = document.getElementById('formPhone').value.trim();
+    const ext = document.getElementById('formExt')?.value.trim() || '';
     const address = document.getElementById('formAddress').value.trim();
     const linkedin = document.getElementById('formLinkedin').value.trim();
     const techStr = document.getElementById('formTech').value.trim();
@@ -1334,11 +1373,13 @@ class CardVaultApp {
         Object.assign(card, {
           nameZh, nameEn, name: displayName, title, company, account: company,
           division, department: [division, department].filter(Boolean).join(' / ') || department,
-          stakeholderRole: role, sentiment, email, phone, address, linkedin, techInterests, theme, lastMet, notes
+          stakeholderRole: role, sentiment, email, phone, ext, address, linkedin, techInterests, theme, lastMet, notes
         });
         this.showToast(`Updated ${displayName}`);
         if (this.googleScriptUrl) {
           this.pushCardToGoogleSheet(card);
+        } else {
+          this.showToast(`⚠️ 已更新本機！尚未設定 Google 試算表同步網址`);
         }
       }
     } else {
@@ -1348,7 +1389,7 @@ class CardVaultApp {
         nameZh, nameEn, name: displayName, title, company, account: company,
         division, department: [division, department].filter(Boolean).join(' / ') || department,
         stakeholderRole: role,
-        sentiment, email, phone, mobile: phone, address, linkedin, techInterests,
+        sentiment, email, phone, ext, mobile: phone, address, linkedin, techInterests,
         theme, lastMet, notes, meetingCount: 1, favorite: false,
         createdAt: new Date().toISOString().split('T')[0]
       };
@@ -1357,6 +1398,8 @@ class CardVaultApp {
 
       if (this.googleScriptUrl) {
         this.pushCardToGoogleSheet(newCard);
+      } else {
+        this.showToast(`⚠️ 名片已儲存本機！尚未設定 Google 試算表同步網址`);
       }
     }
 
@@ -1455,14 +1498,15 @@ class CardVaultApp {
 
   // Generate standard RFC 6350 vCard
   generateVCardString(card) {
+    const phoneWithExt = card.phone ? (card.ext ? `${card.phone},${card.ext}` : card.phone) : '';
     return [
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${card.name}`,
       `TITLE:${card.title}`,
-      `ORG:${card.company};${card.department || ''}`,
+      `ORG:${card.company};${[card.division, card.department].filter(Boolean).join(' / ')}`,
       card.email ? `EMAIL;TYPE=WORK:${card.email}` : '',
-      card.phone ? `TEL;TYPE=WORK,VOICE:${card.phone}` : '',
+      phoneWithExt ? `TEL;TYPE=WORK,VOICE:${phoneWithExt}` : '',
       card.address ? `ADR;TYPE=WORK:;;${card.address};;;;` : '',
       card.website ? `URL:${card.website}` : '',
       card.notes ? `NOTE:${card.notes}` : '',
@@ -1587,10 +1631,16 @@ class CardVaultApp {
     const urlText = document.getElementById('phoneConnectUrlText');
     if (!modal || !qrCanvas) return;
 
-    // Use current location URL or LAN IP
-    let targetUrl = window.location.href;
+    // Use current origin + pathname and embed syncUrl if configured
+    let baseUrl = window.location.origin + window.location.pathname;
     if (window.location.protocol === 'file:') {
-      targetUrl = "http://10.20.30.175:8080";
+      baseUrl = "http://10.20.30.175:8080";
+    }
+
+    let targetUrl = baseUrl;
+    if (this.googleScriptUrl) {
+      const delimiter = targetUrl.includes('?') ? '&' : '?';
+      targetUrl = `${targetUrl}${delimiter}syncUrl=${encodeURIComponent(this.googleScriptUrl)}`;
     }
 
     if (urlText) urlText.textContent = targetUrl;
@@ -1826,39 +1876,59 @@ class CardVaultApp {
       const data = await this.fetchCardsData(this.googleScriptUrl);
 
       if (data.status === 'success' && Array.isArray(data.cards)) {
-        if (data.cards.length > 0) {
-          const favMap = new Map(this.cards.map(c => [c.id, c.favorite]));
+        const remoteCards = data.cards;
+        const remoteIds = new Set(remoteCards.map(c => String(c.id).trim()));
+        const deletedIds = new Set(JSON.parse(localStorage.getItem('atl_deleted_ids') || '[]'));
 
-          // Adopt all active rows from Google Sheet as Source of Truth
-          this.cards = data.cards.map(c => {
-            if (favMap.has(c.id)) {
-              c.favorite = favMap.get(c.id);
+        // Filter out deleted cards
+        const validRemoteCards = remoteCards.filter(c => !deletedIds.has(c.id));
+
+        // Keep local cards that are not yet found on the remote sheet (prevents wiping local cards!)
+        const localUnsynced = this.cards.filter(c => !remoteIds.has(String(c.id).trim()) && !deletedIds.has(c.id));
+
+        const favMap = new Map(this.cards.map(c => [c.id, c.favorite]));
+
+        // Merge: local unsynced cards first, then remote cards
+        const merged = [...localUnsynced, ...validRemoteCards].map(c => {
+          if (favMap.has(c.id)) {
+            c.favorite = favMap.get(c.id);
+          }
+          return c;
+        });
+
+        // Deduplicate
+        const seen = new Set();
+        this.cards = merged.filter(c => {
+          if (seen.has(c.id)) return false;
+          seen.add(c.id);
+          return true;
+        });
+
+        this.saveData();
+        this.populateFilterOptions();
+        this.render();
+
+        const statusText = document.getElementById('syncStatusText');
+        if (statusText) {
+          statusText.textContent = `Connected & Synced (${this.cards.length} cards)`;
+          statusText.className = 'font-mono text-emerald-400 font-semibold';
+        }
+
+        if (!silent) {
+          this.showToast(`Synced ${this.cards.length} cards from Google Sheet!`);
+          if (window.confetti) {
+            window.confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+          }
+        }
+
+        // If there are local unsynced cards and we are connected to Google Script, try uploading them in background
+        if (localUnsynced.length > 0 && this.googleScriptUrl) {
+          localUnsynced.forEach(unc => {
+            if (!unc._isPushing) {
+              unc._isPushing = true;
+              this.pushCardToGoogleSheet(unc);
             }
-            return c;
           });
-
-          this.saveData();
-          this.populateFilterOptions();
-          this.render();
-          const statusText = document.getElementById('syncStatusText');
-          if (statusText) {
-            statusText.textContent = `Connected & Synced (${this.cards.length} cards)`;
-            statusText.className = 'font-mono text-emerald-400 font-semibold';
-          }
-          if (!silent) {
-            this.showToast(`Synced ${this.cards.length} cards from Google Sheet!`);
-            if (window.confetti) {
-              window.confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
-            }
-          }
-        } else {
-          this.cards = [];
-          this.saveData();
-          this.populateFilterOptions();
-          this.render();
-          if (!silent) {
-            this.showToast('Google Sheet is currently empty');
-          }
         }
       }
     } catch (err) {
@@ -1879,7 +1949,7 @@ class CardVaultApp {
   async pushCardToGoogleSheet(card) {
     if (!this.googleScriptUrl) return;
     try {
-      this.showToast(`Uploading ${card.name} to Google Sheet...`);
+      this.showToast(`正在寫入 Google 試算表：${card.name}...`);
       await fetch(this.googleScriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1888,12 +1958,15 @@ class CardVaultApp {
         keepalive: true
       });
       console.log('Card posted to Google Sheet & Drive:', card.name);
-      this.showToast(`Synced ${card.name} to Google Sheet & Drive!`);
+      card._isPushing = false;
+      this.showToast(`✅ 已成功寫入 Google 試算表：${card.name}`);
       if (window.confetti) {
         window.confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
       }
     } catch (err) {
+      card._isPushing = false;
       console.warn('Google Sheet background push notice:', err);
+      this.showToast(`⚠️ 寫入雲端中，本機已安全保留`);
     }
   }
 

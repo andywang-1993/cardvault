@@ -17,7 +17,8 @@ const HEADERS = [
   'Role (角色)',
   'Sentiment (關係)',
   'Email',
-  'Phone',
+  'Phone (電話)',
+  'Ext (分機)',
   'Address (地址)',
   'TechInterests (技術標籤)',
   'Notes (備註)',
@@ -35,10 +36,9 @@ function setupSheetAndFolder() {
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
   } else {
-    // 檢查舊版表頭是否需要升級欄位
+    // 檢查舊版表頭是否需要升級欄位 (支援 18 欄位包含分機 Ext)
     const firstRow = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
-    if (firstRow.length < 17 || !String(firstRow[1]).includes('NameZh')) {
-      // 舊版表頭自動平滑升級
+    if (firstRow.length < HEADERS.length || !String(firstRow[1]).includes('NameZh') || !String(firstRow[11]).includes('Ext')) {
       sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
     }
   }
@@ -93,7 +93,7 @@ function doPost(e) {
       }
     }
 
-    // 寫入 Google 試算表（包含中英文姓名、兩層部門結構）
+    // 寫入 Google 試算表（包含中英文姓名、兩層部門結構、分機號碼）
     sheet.appendRow([
       data.id || ('card-' + new Date().getTime()),
       data.nameZh || '',
@@ -106,6 +106,7 @@ function doPost(e) {
       data.sentiment || 'Champion',
       data.email || '',
       data.phone ? "'" + String(data.phone).trim() : '',
+      data.ext ? "'" + String(data.ext).trim() : '',
       data.address || '',
       Array.isArray(data.techInterests) ? data.techInterests.join(', ') : (data.techInterests || ''),
       data.notes || '',
@@ -146,55 +147,89 @@ function doGet(e) {
           }
         }
 
-        // 兼容舊版與新版欄位格式
-        const isNewFormat = values[0].length >= 17 && String(values[0][1]).includes('NameZh');
+        // 兼容 18 欄位 (含 Ext)、17 欄位與舊版 15 欄位
+        const headerRow = values[0];
+        const hasExt = headerRow.length >= 18 && String(headerRow[11]).includes('Ext');
+        const is17 = headerRow.length >= 17 && String(headerRow[1]).includes('NameZh');
 
-        const card = isNewFormat ? {
-          id: String(row[0] || 'card-' + i),
-          nameZh: String(row[1] || ''),
-          nameEn: String(row[2] || ''),
-          name: (String(row[1] || '') && String(row[2] || '')) ? `${row[1]} (${row[2]})` : String(row[1] || row[2] || 'Unnamed'),
-          title: String(row[3] || ''),
-          company: String(row[4] || ''),
-          account: String(row[4] || ''),
-          division: String(row[5] || ''),
-          department: String(row[6] || ''),
-          stakeholderRole: String(row[7] || 'Technical Champion'),
-          sentiment: String(row[8] || 'Champion'),
-          email: String(row[9] || ''),
-          phone: String(row[10] || '').replace(/^#ERROR!/, ''),
-          mobile: String(row[10] || '').replace(/^#ERROR!/, ''),
-          address: String(row[11] || ''),
-          techInterests: String(row[12] || '').split(',').map(s => s.trim()).filter(Boolean),
-          notes: String(row[13] || ''),
-          lastMet: lastMetStr,
-          cardFrontImage: String(row[15] || ''),
-          theme: 'executive-navy',
-          favorite: false
-        } : {
+        let card;
+        if (hasExt) {
+          card = {
+            id: String(row[0] || 'card-' + i),
+            nameZh: String(row[1] || ''),
+            nameEn: String(row[2] || ''),
+            name: (String(row[1] || '') && String(row[2] || '')) ? `${row[1]} (${row[2]})` : String(row[1] || row[2] || 'Unnamed'),
+            title: String(row[3] || ''),
+            company: String(row[4] || ''),
+            account: String(row[4] || ''),
+            division: String(row[5] || ''),
+            department: String(row[6] || ''),
+            stakeholderRole: String(row[7] || 'Technical Champion'),
+            sentiment: String(row[8] || 'Champion'),
+            email: String(row[9] || ''),
+            phone: String(row[10] || '').replace(/^#ERROR!/, ''),
+            ext: String(row[11] || '').replace(/^#ERROR!/, ''),
+            mobile: String(row[10] || '').replace(/^#ERROR!/, ''),
+            address: String(row[12] || ''),
+            techInterests: String(row[13] || '').split(',').map(s => s.trim()).filter(Boolean),
+            notes: String(row[14] || ''),
+            lastMet: row[15] ? (row[15] instanceof Date ? Utilities.formatDate(row[15], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[15]).substring(0, 10)) : '',
+            cardFrontImage: String(row[16] || ''),
+            theme: 'executive-navy',
+            favorite: false
+          };
+        } else if (is17) {
+          card = {
+            id: String(row[0] || 'card-' + i),
+            nameZh: String(row[1] || ''),
+            nameEn: String(row[2] || ''),
+            name: (String(row[1] || '') && String(row[2] || '')) ? `${row[1]} (${row[2]})` : String(row[1] || row[2] || 'Unnamed'),
+            title: String(row[3] || ''),
+            company: String(row[4] || ''),
+            account: String(row[4] || ''),
+            division: String(row[5] || ''),
+            department: String(row[6] || ''),
+            stakeholderRole: String(row[7] || 'Technical Champion'),
+            sentiment: String(row[8] || 'Champion'),
+            email: String(row[9] || ''),
+            phone: String(row[10] || '').replace(/^#ERROR!/, ''),
+            ext: '',
+            mobile: String(row[10] || '').replace(/^#ERROR!/, ''),
+            address: String(row[11] || ''),
+            techInterests: String(row[12] || '').split(',').map(s => s.trim()).filter(Boolean),
+            notes: String(row[13] || ''),
+            lastMet: row[14] ? (row[14] instanceof Date ? Utilities.formatDate(row[14], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[14]).substring(0, 10)) : '',
+            cardFrontImage: String(row[15] || ''),
+            theme: 'executive-navy',
+            favorite: false
+          };
+        } else {
           // 舊版 15 欄位相容轉換
-          id: String(row[0] || 'card-' + i),
-          nameZh: String(row[1] || '').match(/[\u4e00-\u9fa5]/) ? String(row[1] || '') : '',
-          nameEn: !String(row[1] || '').match(/[\u4e00-\u9fa5]/) ? String(row[1] || '') : '',
-          name: String(row[1] || ''),
-          title: String(row[2] || ''),
-          company: String(row[3] || ''),
-          account: String(row[3] || ''),
-          division: '',
-          department: String(row[4] || ''),
-          stakeholderRole: String(row[5] || 'Technical Champion'),
-          sentiment: String(row[6] || 'Champion'),
-          email: String(row[7] || ''),
-          phone: String(row[8] || '').replace(/^#ERROR!/, ''),
-          mobile: String(row[8] || '').replace(/^#ERROR!/, ''),
-          address: String(row[9] || ''),
-          techInterests: String(row[10] || '').split(',').map(s => s.trim()).filter(Boolean),
-          notes: String(row[11] || ''),
-          lastMet: row[12] ? (row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10)) : '',
-          cardFrontImage: String(row[13] || ''),
-          theme: 'executive-navy',
-          favorite: false
-        };
+          card = {
+            id: String(row[0] || 'card-' + i),
+            nameZh: String(row[1] || '').match(/[\u4e00-\u9fa5]/) ? String(row[1] || '') : '',
+            nameEn: !String(row[1] || '').match(/[\u4e00-\u9fa5]/) ? String(row[1] || '') : '',
+            name: String(row[1] || ''),
+            title: String(row[2] || ''),
+            company: String(row[3] || ''),
+            account: String(row[3] || ''),
+            division: '',
+            department: String(row[4] || ''),
+            stakeholderRole: String(row[5] || 'Technical Champion'),
+            sentiment: String(row[6] || 'Champion'),
+            email: String(row[7] || ''),
+            phone: String(row[8] || '').replace(/^#ERROR!/, ''),
+            ext: '',
+            mobile: String(row[8] || '').replace(/^#ERROR!/, ''),
+            address: String(row[9] || ''),
+            techInterests: String(row[10] || '').split(',').map(s => s.trim()).filter(Boolean),
+            notes: String(row[11] || ''),
+            lastMet: row[12] ? (row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10)) : '',
+            cardFrontImage: String(row[13] || ''),
+            theme: 'executive-navy',
+            favorite: false
+          };
+        }
 
         cards.push(card);
       }

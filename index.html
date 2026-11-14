@@ -430,14 +430,18 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div>
+              <div class="grid grid-cols-12 gap-3">
+                <div class="col-span-12 sm:col-span-6">
                   <label class="block text-slate-400 mb-1">Email 電子信箱</label>
                   <input type="email" id="scanEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="user@company.com">
                 </div>
-                <div>
+                <div class="col-span-7 sm:col-span-4">
                   <label class="block text-slate-400 mb-1">電話 (Phone)</label>
-                  <input type="text" id="scanPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+886 912-345-678">
+                  <input type="text" id="scanPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+886 2 2725-9999">
+                </div>
+                <div class="col-span-5 sm:col-span-2">
+                  <label class="block text-slate-400 mb-1">分機 (Ext)</label>
+                  <input type="text" id="scanExt" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-mono" placeholder="1234">
                 </div>
               </div>
 
@@ -748,14 +752,18 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
+        <div class="grid grid-cols-12 gap-3">
+          <div class="col-span-12 sm:col-span-6">
             <label class="block text-slate-400 mb-1">Email</label>
-            <input type="email" id="formEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="jane.smith@apex.com">
+            <input type="email" id="formEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="user@company.com">
           </div>
-          <div>
+          <div class="col-span-7 sm:col-span-4">
             <label class="block text-slate-400 mb-1">Phone</label>
-            <input type="text" id="formPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+1 (415) 555-0199">
+            <input type="text" id="formPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+886 2 2725-9999">
+          </div>
+          <div class="col-span-5 sm:col-span-2">
+            <label class="block text-slate-400 mb-1">Ext (分機)</label>
+            <input type="text" id="formExt" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-mono" placeholder="1234">
           </div>
         </div>
 
