@@ -92,17 +92,24 @@
       <!-- Right Header Actions -->
       <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <!-- Google Cloud Sync Button -->
-        <button id="btnOpenCloudSync" class="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition-all shadow-md active:scale-95 touch-manipulation" title="Google Drive & Sheet Sync">
+        <button id="btnOpenCloudSync" class="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition-all shadow-md active:scale-95 touch-manipulation cursor-pointer" title="Google Drive & Sheet Sync">
           <i data-lucide="cloud" class="w-4 h-4 text-blue-400 pointer-events-none" id="headerCloudIcon"></i>
           <span class="hidden md:inline" id="headerCloudText">Google Sync</span>
         </button>
 
-        <button id="btnOpenScanner" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/25 active:scale-95 touch-manipulation">
-          <i data-lucide="scan-line" class="w-4 h-4 pointer-events-none"></i>
-          <span>Scan</span>
+        <!-- Phone Connect Button (QR Code) -->
+        <button id="btnOpenPhoneConnect" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-600/30 to-purple-600/30 hover:from-indigo-600/50 hover:to-purple-600/50 border border-indigo-500/40 text-indigo-200 hover:text-white text-xs font-bold transition-all shadow-md active:scale-95 touch-manipulation cursor-pointer" title="用手機相機掃描 QR Code 連線">
+          <i data-lucide="smartphone" class="w-4 h-4 text-indigo-400 pointer-events-none"></i>
+          <span class="inline">手機掃描</span>
         </button>
 
-        <button id="btnOpenAddModal" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all">
+        <button id="btnOpenScanner" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-blue-600/25 active:scale-95 touch-manipulation cursor-pointer">
+          <i data-lucide="scan-line" class="w-4 h-4 pointer-events-none"></i>
+          <span class="hidden sm:inline">掃描器</span>
+          <span class="sm:hidden">Scan</span>
+        </button>
+
+        <button id="btnOpenAddModal" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs sm:text-sm font-medium transition-all cursor-pointer">
           <i data-lucide="plus" class="w-4 h-4 text-blue-400"></i>
           <span>Add</span>
         </button>
@@ -325,6 +332,15 @@
           <p class="text-sm text-slate-400 max-w-lg mx-auto">
             Upload or snap a photo of any physical namecard. Our client-side OCR engine extracts contact details, company, phone, email, and automatically categorizes tech tags.
           </p>
+
+          <!-- Mobile Phone QR Quick Launch Banner -->
+          <div class="pt-2">
+            <button id="btnScannerPhoneConnect" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white text-xs font-bold transition-all shadow-lg active:scale-95 cursor-pointer">
+              <i data-lucide="smartphone" class="w-4 h-4 text-indigo-400"></i>
+              <span>想用手機拍照直接辨識？點此開啟手機連線 QR Code</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">

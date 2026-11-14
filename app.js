@@ -206,6 +206,7 @@ class CardVaultApp {
 
     // Modal controls
     document.getElementById('btnOpenPhoneConnect')?.addEventListener('click', () => this.openPhoneConnectModal());
+    document.getElementById('btnScannerPhoneConnect')?.addEventListener('click', () => this.openPhoneConnectModal());
     document.getElementById('btnPhoneConnectClose')?.addEventListener('click', () => this.closePhoneConnectModal());
     document.getElementById('btnModalClose')?.addEventListener('click', () => this.closeDetailModal());
     document.getElementById('btnEditModalClose')?.addEventListener('click', () => this.closeEditModal());
