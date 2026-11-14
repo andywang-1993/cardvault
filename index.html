@@ -395,63 +395,83 @@
             </div>
 
             <form id="scannerForm" class="space-y-3 text-xs">
+              <!-- Name: Chinese & English -->
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-slate-400 mb-1">Full Name *</label>
-                  <input type="text" id="scanName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Johnathan Doe">
+                  <label class="block text-slate-400 mb-1">中文姓名 (Chinese Name)</label>
+                  <input type="text" id="scanNameZh" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：陳冠宇">
                 </div>
                 <div>
-                  <label class="block text-slate-400 mb-1">Job Title *</label>
-                  <input type="text" id="scanTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. VP Infrastructure">
+                  <label class="block text-slate-400 mb-1">英文姓名 (English Name)</label>
+                  <input type="text" id="scanNameEn" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：Cooper Chen">
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-slate-400 mb-1">Company / Account *</label>
-                  <input type="text" id="scanCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Acme Corp">
+                  <label class="block text-slate-400 mb-1">公司名稱 (Company) *</label>
+                  <input type="text" id="scanCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：聯發科技 / MediaTek">
                 </div>
                 <div>
-                  <label class="block text-slate-400 mb-1">Stakeholder Role</label>
+                  <label class="block text-slate-400 mb-1">職稱 (Job Title) *</label>
+                  <input type="text" id="scanTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：資深架構師 / VP Tech">
+                </div>
+              </div>
+
+              <!-- Two-tier Department Structure -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">一級部門 (處級 / BU / 群)</label>
+                  <input type="text" id="scanDivision" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="例如：資訊處 / 金融科技群">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">二級部門 (科組 / 課 / Team)</label>
+                  <input type="text" id="scanDepartment" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="例如：信用卡系統科 / 雲端架構組">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">Email 電子信箱</label>
+                  <input type="email" id="scanEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="user@company.com">
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">電話 (Phone)</label>
+                  <input type="text" id="scanPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+886 912-345-678">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-slate-400 mb-1">利害關係人角色 (Stakeholder)</label>
                   <select id="scanRole" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none">
-                    <option value="Technical Champion">Technical Champion</option>
-                    <option value="Economic Buyer">Economic Buyer</option>
-                    <option value="Influencer">Influencer</option>
-                    <option value="Gatekeeper">Gatekeeper</option>
-                    <option value="End User">End User</option>
+                    <option value="Technical Champion">Technical Champion (技術推手)</option>
+                    <option value="Economic Buyer">Economic Buyer (決策買主)</option>
+                    <option value="Influencer">Influencer (關鍵影響者)</option>
+                    <option value="Gatekeeper">Gatekeeper (資安/採購把關者)</option>
+                    <option value="End User">End User (終端使用者)</option>
                   </select>
                 </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-slate-400 mb-1">Email</label>
-                  <input type="email" id="scanEmail" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="john@company.com">
-                </div>
-                <div>
-                  <label class="block text-slate-400 mb-1">Phone</label>
-                  <input type="text" id="scanPhone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="+1 (555) 000-0000">
+                  <label class="block text-slate-400 mb-1">辦公室地址 / 地點</label>
+                  <input type="text" id="scanAddress" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="台北市信義區...">
                 </div>
               </div>
 
               <div>
-                <label class="block text-slate-400 mb-1">Office Address / Location</label>
-                <input type="text" id="scanAddress" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="City, State, Country">
+                <label class="block text-slate-400 mb-1">技術興趣標籤 (逗號分隔)</label>
+                <input type="text" id="scanTech" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="OpenShift, watsonx, Kubernetes, FinOps, Kafka">
               </div>
 
               <div>
-                <label class="block text-slate-400 mb-1">Technology Interests (Comma-separated)</label>
-                <input type="text" id="scanTech" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="OpenShift, watsonx, Kubernetes, FinOps">
+                <label class="block text-slate-400 mb-1">ATL 拜訪筆記 & 策略備註</label>
+                <textarea id="scanNotes" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="記錄拜訪重點、客戶關注技術、下次行動方針..."></textarea>
               </div>
 
-              <div>
-                <label class="block text-slate-400 mb-1">ATL Meeting Notes & Strategy</label>
-                <textarea id="scanNotes" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="Context from recent meeting..."></textarea>
-              </div>
-
-              <div class="pt-3">
-                <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
-                  <i data-lucide="check" class="w-4 h-4"></i> Save to CardVault
+              <div class="pt-2">
+                <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 via-blue-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-95 touch-manipulation cursor-pointer">
+                  <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                  <span>儲存並自動寫入 Google 試算表 / Excel</span>
                 </button>
               </div>
             </form>
@@ -546,6 +566,7 @@
                 <div>
                   <h4 id="modalFrontName" class="text-lg font-bold tracking-tight">Name</h4>
                   <p id="modalFrontTitle" class="text-xs text-blue-300 font-medium">Job Title</p>
+                  <p id="modalFrontDepartment" class="text-[11px] text-slate-400 font-mono mt-0.5"></p>
                 </div>
                 <div id="modalFrontCompanyLogo" class="text-right">
                   <span id="modalFrontCompany" class="text-xs font-extrabold tracking-wider uppercase text-slate-300">COMPANY</span>
@@ -670,25 +691,38 @@
       <form id="cardForm" class="p-6 overflow-y-auto space-y-4 text-xs">
         <input type="hidden" id="formCardId">
 
+        <!-- Name: Chinese & English -->
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-400 mb-1">Full Name *</label>
-            <input type="text" id="formName" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Dr. Jane Smith">
+            <label class="block text-slate-400 mb-1">中文姓名 (Chinese Name)</label>
+            <input type="text" id="formNameZh" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：陳大文">
           </div>
           <div>
-            <label class="block text-slate-400 mb-1">Job Title *</label>
-            <input type="text" id="formTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Chief Architect">
+            <label class="block text-slate-400 mb-1">英文姓名 (English Name)</label>
+            <input type="text" id="formNameEn" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：David Chen">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-400 mb-1">Company / Account Name *</label>
-            <input type="text" id="formCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Apex Global Bank">
+            <label class="block text-slate-400 mb-1">公司名稱 (Company) *</label>
+            <input type="text" id="formCompany" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：國泰世華商業銀行">
           </div>
           <div>
-            <label class="block text-slate-400 mb-1">Department</label>
-            <input type="text" id="formDepartment" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="e.g. Cloud Infrastructure">
+            <label class="block text-slate-400 mb-1">職稱 (Job Title) *</label>
+            <input type="text" id="formTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none font-medium" placeholder="例如：資訊長 / 副總經理">
+          </div>
+        </div>
+
+        <!-- Two-tier Department -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">一級部門 (處級 / BU)</label>
+            <input type="text" id="formDivision" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="例如：資訊處 / 數位金融處">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">二級部門 (科組 / Team)</label>
+            <input type="text" id="formDepartment" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 focus:border-blue-500 focus:outline-none" placeholder="例如：信用卡系統科 / 雲端組">
           </div>
         </div>
 

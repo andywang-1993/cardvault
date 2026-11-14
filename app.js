@@ -33,7 +33,7 @@ class CardVaultApp {
     this.updateStats();
     this.updateHeaderSyncStatus();
 
-    // Auto-sync from Google Sheet on start and when returning to tab
+    // Auto-sync from Google Sheet on start, window focus, and periodic background polling
     if (this.googleScriptUrl) {
       this.pullFromGoogleSheet(true);
     }
@@ -42,6 +42,13 @@ class CardVaultApp {
         this.pullFromGoogleSheet(true);
       }
     });
+
+    // Background auto-sync polling every 12 seconds so edits on Google Sheet or phone sync instantly
+    setInterval(() => {
+      if (this.googleScriptUrl && document.visibilityState === 'visible') {
+        this.pullFromGoogleSheet(true);
+      }
+    }, 12000);
     
     // Initialize Lucide Icons
     if (window.lucide) {
@@ -254,32 +261,38 @@ class CardVaultApp {
     // Sample card buttons for instant demo
     document.getElementById('btnLoadSample1')?.addEventListener('click', () => {
       this.populateScannerForm({
-        name: "Dr. Elena Rostova",
-        title: "Chief Technology Officer (CTO)",
-        company: "CyberBank Corp",
+        nameZh: "陳冠宇",
+        nameEn: "Cooper Chen",
+        title: "資深架構師 (Lead Architect)",
+        company: "國泰世華銀行 (Cathay United Bank)",
+        division: "數位金融處",
+        department: "雲端架構組",
         role: "Technical Champion",
-        email: "elena.rostova@cyberbank.io",
-        phone: "+1 (212) 555-8930",
-        address: "745 7th Ave, New York, NY 10019",
-        tech: "watsonx / GenAI, Quantum-Safe Cryptography, Hybrid Cloud, Kafka",
-        notes: "Met at NYC Fintech Leader Forum. Discussed replacing legacy risk engine with AI foundation models."
+        email: "cooper.chen@cathaybk.com.tw",
+        phone: "+886 912 345 678",
+        address: "台北市信義區松仁路7號",
+        tech: "watsonx / GenAI, OpenShift, Kubernetes, Kafka, FinOps",
+        notes: "關注核心系統現代化與微服務遷移，評估 OpenShift AI POC。"
       });
-      this.showToast("Loaded sample card: Dr. Elena Rostova");
+      this.showToast("已載入範例名片：陳冠宇 Cooper Chen");
     });
 
     document.getElementById('btnLoadSample2')?.addEventListener('click', () => {
       this.populateScannerForm({
-        name: "Arthur Wei",
-        title: "Head of AI Simulation & Foundry Compute",
-        company: "QuantumFab Semiconductor",
+        nameZh: "魏志宏",
+        nameEn: "Arthur Wei",
+        title: "運算架構副總經理 (VP Compute Infra)",
+        company: "聯發科技 (MediaTek)",
+        division: "晶片設計研發處",
+        department: "高效能運算組 (HPC)",
         role: "Economic Buyer",
-        email: "arthur.wei@quantumfab.com",
-        phone: "+886 3 666 8899",
-        address: "Hsinchu Science Park, Taiwan",
-        tech: "GPU Orchestration, Ceph / Storage Scale, OpenShift AI, Linux on Z",
-        notes: "Requested benchmark comparison for multi-PB high-bandwidth storage cluster."
+        email: "arthur.wei@mediatek.com",
+        phone: "+886 3 567 8800",
+        address: "新竹科學園區創新一路1號",
+        tech: "Storage Scale / Ceph, GPU Orchestration, OpenShift AI, Linux on Z",
+        notes: "評估 PB 級高速儲存架構與晶片模擬運算叢集擴容。"
       });
-      this.showToast("Loaded sample card: Arthur Wei");
+      this.showToast("已載入範例名片：魏志宏 Arthur Wei");
     });
   }
 
@@ -367,14 +380,17 @@ class CardVaultApp {
     reader.readAsDataURL(file);
   }
 
-  // Heuristic parser for raw text extracted from cards
+  // Heuristic parser for raw text extracted from cards (Chinese + English + Two-tier Dept)
   parseOCRTextAndFill(rawText) {
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
     
     let parsed = {
-      name: '',
+      nameZh: '',
+      nameEn: '',
       title: '',
       company: '',
+      division: '',
+      department: '',
       email: '',
       phone: '',
       address: '',
@@ -384,7 +400,7 @@ class CardVaultApp {
     // Regex matchers
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/i;
     const phoneRegex = /(\+?[\d\s\(\)-]{8,20})/;
-    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/i;
+    const zhNameRegex = /([\u4e00-\u9fa5]{2,4})/;
 
     const emailMatch = rawText.match(emailRegex);
     if (emailMatch) parsed.email = emailMatch[0];
@@ -392,13 +408,35 @@ class CardVaultApp {
     const phoneMatch = rawText.match(phoneRegex);
     if (phoneMatch) parsed.phone = phoneMatch[0].trim();
 
-    // Line heuristic:
-    if (lines.length > 0) parsed.name = lines[0].replace(/[^a-zA-Z\s.,]/g, '');
-    if (lines.length > 1) parsed.title = lines[1];
-    if (lines.length > 2) parsed.company = lines[2];
+    // Chinese & English Name extraction heuristics
+    const zhMatch = rawText.match(zhNameRegex);
+    if (zhMatch) {
+      parsed.nameZh = zhMatch[1];
+    }
+
+    lines.forEach(line => {
+      // English Name patterns like "David Chen", "Cooper Wang", "Dr. Elena Rostova"
+      if (!parsed.nameEn && /^[A-Z][a-z]+(\s+[A-Z][a-z]+)+$/.test(line) && line.split(' ').length <= 3) {
+        parsed.nameEn = line;
+      }
+      // Division / Department heuristics (處, 部, BU, 群 / 組, 科, 課, Team)
+      if (!parsed.division && /(處|總處|事業群|BU|Division|Dept)/i.test(line)) {
+        parsed.division = line;
+      } else if (!parsed.department && /(組|科|課|Team|Section)/i.test(line)) {
+        parsed.department = line;
+      }
+      // Company heuristics
+      if (!parsed.company && /(股份有限公司|科技|銀行|Corp|Inc|Ltd|Company|Enterprise|Group)/i.test(line)) {
+        parsed.company = line;
+      }
+      // Title heuristics
+      if (!parsed.title && /(經理|總監|協理|副總|架構師|工程師|長|Director|VP|Architect|Engineer|CTO|CIO|Lead|Head)/i.test(line)) {
+        parsed.title = line;
+      }
+    });
 
     // Detect technical keywords
-    const techKeywords = ["OpenShift", "Kubernetes", "watsonx", "GenAI", "AI", "Cloud", "FinOps", "Kafka", "Mainframe", "Cybersecurity", "Zero Trust", "DevOps", "Instana", "Turbonomic", "API Connect"];
+    const techKeywords = ["OpenShift", "Kubernetes", "watsonx", "GenAI", "AI", "Cloud", "FinOps", "Kafka", "Mainframe", "Cybersecurity", "Zero Trust", "DevOps", "Instana", "Turbonomic", "API Connect", "Storage Scale", "Ceph", "Linux on Z"];
     techKeywords.forEach(kw => {
       if (rawText.toLowerCase().includes(kw.toLowerCase())) {
         parsed.tech.push(kw);
@@ -410,56 +448,89 @@ class CardVaultApp {
     }
 
     this.populateScannerForm({
-      name: parsed.name || "Scanned Contact",
-      title: parsed.title || "Enterprise Leader",
-      company: parsed.company || "Client Enterprise",
+      nameZh: parsed.nameZh || "",
+      nameEn: parsed.nameEn || "",
+      title: parsed.title || "架構主管 / Enterprise Leader",
+      company: parsed.company || "企業客戶 (Client Enterprise)",
+      division: parsed.division || "",
+      department: parsed.department || "",
       role: "Technical Champion",
       email: parsed.email || "",
       phone: parsed.phone || "",
       address: parsed.address || "",
       tech: parsed.tech.join(", "),
-      notes: "Scanned via ATL CardVault Smart OCR on " + new Date().toLocaleDateString()
+      notes: "掃描於 ATL CardVault 智慧 OCR — " + new Date().toLocaleDateString()
     });
   }
 
   populateScannerForm(data) {
-    document.getElementById('scanName').value = data.name || '';
-    document.getElementById('scanTitle').value = data.title || '';
-    document.getElementById('scanCompany').value = data.company || '';
-    document.getElementById('scanRole').value = data.role || 'Technical Champion';
-    document.getElementById('scanEmail').value = data.email || '';
-    document.getElementById('scanPhone').value = data.phone || '';
-    document.getElementById('scanAddress').value = data.address || '';
-    document.getElementById('scanTech').value = data.tech || '';
-    document.getElementById('scanNotes').value = data.notes || '';
+    const elNameZh = document.getElementById('scanNameZh');
+    const elNameEn = document.getElementById('scanNameEn');
+    const elTitle = document.getElementById('scanTitle');
+    const elCompany = document.getElementById('scanCompany');
+    const elDivision = document.getElementById('scanDivision');
+    const elDepartment = document.getElementById('scanDepartment');
+    const elRole = document.getElementById('scanRole');
+    const elEmail = document.getElementById('scanEmail');
+    const elPhone = document.getElementById('scanPhone');
+    const elAddress = document.getElementById('scanAddress');
+    const elTech = document.getElementById('scanTech');
+    const elNotes = document.getElementById('scanNotes');
+
+    if (elNameZh) elNameZh.value = data.nameZh || '';
+    if (elNameEn) elNameEn.value = data.nameEn || (data.name && !data.name.match(/[\u4e00-\u9fa5]/) ? data.name : '');
+    if (elTitle) elTitle.value = data.title || '';
+    if (elCompany) elCompany.value = data.company || '';
+    if (elDivision) elDivision.value = data.division || '';
+    if (elDepartment) elDepartment.value = data.department || '';
+    if (elRole) elRole.value = data.role || 'Technical Champion';
+    if (elEmail) elEmail.value = data.email || '';
+    if (elPhone) elPhone.value = data.phone || '';
+    if (elAddress) elAddress.value = data.address || '';
+    if (elTech) elTech.value = data.tech || '';
+    if (elNotes) elNotes.value = data.notes || '';
   }
 
   handleScannerSave(e) {
     e.preventDefault();
-    const name = document.getElementById('scanName').value.trim();
-    const title = document.getElementById('scanTitle').value.trim();
-    const company = document.getElementById('scanCompany').value.trim();
-    const role = document.getElementById('scanRole').value;
-    const email = document.getElementById('scanEmail').value.trim();
-    const phone = document.getElementById('scanPhone').value.trim();
-    const address = document.getElementById('scanAddress').value.trim();
-    const techStr = document.getElementById('scanTech').value.trim();
-    const notes = document.getElementById('scanNotes').value.trim();
+    const nameZh = document.getElementById('scanNameZh')?.value.trim() || '';
+    const nameEn = document.getElementById('scanNameEn')?.value.trim() || '';
+    const title = document.getElementById('scanTitle')?.value.trim() || '';
+    const company = document.getElementById('scanCompany')?.value.trim() || '';
+    const division = document.getElementById('scanDivision')?.value.trim() || '';
+    const department = document.getElementById('scanDepartment')?.value.trim() || '';
+    const role = document.getElementById('scanRole')?.value || 'Technical Champion';
+    const email = document.getElementById('scanEmail')?.value.trim() || '';
+    const phone = document.getElementById('scanPhone')?.value.trim() || '';
+    const address = document.getElementById('scanAddress')?.value.trim() || '';
+    const techStr = document.getElementById('scanTech')?.value.trim() || '';
+    const notes = document.getElementById('scanNotes')?.value.trim() || '';
+
+    // Composite display name
+    let displayName = '';
+    if (nameZh && nameEn) {
+      displayName = `${nameZh} (${nameEn})`;
+    } else {
+      displayName = nameZh || nameEn || 'Unnamed Contact';
+    }
 
     const techInterests = techStr ? techStr.split(',').map(t => t.trim()).filter(Boolean) : ["Architecture"];
 
     const newCard = {
       id: `card-${Date.now()}`,
-      name,
+      nameZh,
+      nameEn,
+      name: displayName,
       title,
       company,
       account: company,
-      department: "Client Engineering",
+      division,
+      department: [division, department].filter(Boolean).join(' / ') || department || 'Client Team',
       email,
       phone,
       mobile: phone,
       address,
-      website: `https://www.${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+      website: company ? `https://www.${company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com` : '',
       linkedin: "",
       stakeholderRole: role,
       influenceLevel: "High",
@@ -1126,6 +1197,8 @@ class CardVaultApp {
     if (badgeEl) badgeEl.innerHTML = this.getRoleBadgeHtml(card.stakeholderRole);
     setText('modalFrontName', card.name);
     setText('modalFrontTitle', card.title);
+    const deptDisplay = [card.division, card.department].filter(Boolean).join(' • ') || card.department || '';
+    setText('modalFrontDepartment', deptDisplay);
     setText('modalFrontCompany', card.company);
     setText('modalFrontEmail', card.email || 'No email provided');
     setText('modalFrontPhone', card.phone || 'No phone provided');
@@ -1192,10 +1265,19 @@ class CardVaultApp {
 
     document.getElementById('editModalTitle').innerHTML = `<i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i> Edit Card: ${card.name}`;
     document.getElementById('formCardId').value = card.id;
-    document.getElementById('formName').value = card.name || '';
+
+    const elNameZh = document.getElementById('formNameZh');
+    const elNameEn = document.getElementById('formNameEn');
+    const elDivision = document.getElementById('formDivision');
+    const elDepartment = document.getElementById('formDepartment');
+
+    if (elNameZh) elNameZh.value = card.nameZh || '';
+    if (elNameEn) elNameEn.value = card.nameEn || '';
+    if (elDivision) elDivision.value = card.division || '';
+    if (elDepartment) elDepartment.value = card.department || '';
+
     document.getElementById('formTitle').value = card.title || '';
     document.getElementById('formCompany').value = card.company || '';
-    document.getElementById('formDepartment').value = card.department || '';
     document.getElementById('formRole').value = card.stakeholderRole || 'Technical Champion';
     document.getElementById('formSentiment').value = card.sentiment || 'Champion';
     document.getElementById('formEmail').value = card.email || '';
@@ -1218,10 +1300,12 @@ class CardVaultApp {
   handleSaveCard(e) {
     e.preventDefault();
     const id = document.getElementById('formCardId').value;
-    const name = document.getElementById('formName').value.trim();
+    const nameZh = document.getElementById('formNameZh')?.value.trim() || '';
+    const nameEn = document.getElementById('formNameEn')?.value.trim() || '';
     const title = document.getElementById('formTitle').value.trim();
     const company = document.getElementById('formCompany').value.trim();
-    const department = document.getElementById('formDepartment').value.trim();
+    const division = document.getElementById('formDivision')?.value.trim() || '';
+    const department = document.getElementById('formDepartment')?.value.trim() || '';
     const role = document.getElementById('formRole').value;
     const sentiment = document.getElementById('formSentiment').value;
     const email = document.getElementById('formEmail').value.trim();
@@ -1233,6 +1317,14 @@ class CardVaultApp {
     const lastMet = document.getElementById('formLastMet').value;
     const notes = document.getElementById('formNotes').value.trim();
 
+    // Composite display name
+    let displayName = '';
+    if (nameZh && nameEn) {
+      displayName = `${nameZh} (${nameEn})`;
+    } else {
+      displayName = nameZh || nameEn || 'Unnamed Contact';
+    }
+
     const techInterests = techStr ? techStr.split(',').map(t => t.trim()).filter(Boolean) : [];
 
     if (id) {
@@ -1240,22 +1332,28 @@ class CardVaultApp {
       const card = this.cards.find(c => c.id === id);
       if (card) {
         Object.assign(card, {
-          name, title, company, account: company, department, stakeholderRole: role,
-          sentiment, email, phone, address, linkedin, techInterests, theme, lastMet, notes
+          nameZh, nameEn, name: displayName, title, company, account: company,
+          division, department: [division, department].filter(Boolean).join(' / ') || department,
+          stakeholderRole: role, sentiment, email, phone, address, linkedin, techInterests, theme, lastMet, notes
         });
-        this.showToast(`Updated ${name}`);
+        this.showToast(`Updated ${displayName}`);
+        if (this.googleScriptUrl) {
+          this.pushCardToGoogleSheet(card);
+        }
       }
     } else {
       // Create new
       const newCard = {
         id: `card-${Date.now()}`,
-        name, title, company, account: company, department, stakeholderRole: role,
+        nameZh, nameEn, name: displayName, title, company, account: company,
+        division, department: [division, department].filter(Boolean).join(' / ') || department,
+        stakeholderRole: role,
         sentiment, email, phone, mobile: phone, address, linkedin, techInterests,
         theme, lastMet, notes, meetingCount: 1, favorite: false,
         createdAt: new Date().toISOString().split('T')[0]
       };
       this.cards.unshift(newCard);
-      this.showToast(`Added ${name} to CardVault`);
+      this.showToast(`Added ${displayName} to CardVault`);
 
       if (this.googleScriptUrl) {
         this.pushCardToGoogleSheet(newCard);

@@ -1,23 +1,46 @@
 /**
  * ATL CardVault — Google Apps Script Backend (Drive + Sheets)
- * 支援 CORS 與 JSONP 雙向同步
+ * 支援 中英文姓名、兩層部門結構、CORS 與 JSONP 雙向同步
  */
 
 const SHEET_NAME = 'Namecards';
 const FOLDER_NAME = 'ATL_Namecards_Photos';
+
+const HEADERS = [
+  'ID',
+  'NameZh (中文姓名)',
+  'NameEn (英文姓名)',
+  'Title (職稱)',
+  'Company (公司)',
+  'Division (一級部門/處)',
+  'Department (二級部門/組)',
+  'Role (角色)',
+  'Sentiment (關係)',
+  'Email',
+  'Phone',
+  'Address (地址)',
+  'TechInterests (技術標籤)',
+  'Notes (備註)',
+  'LastMet (最近拜訪)',
+  'PhotoDriveUrl (照片連結)',
+  'CreatedAt (建立時間)'
+];
 
 function setupSheetAndFolder() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow([
-      'ID', 'Name', 'Title', 'Company', 'Department', 'Role', 'Sentiment',
-      'Email', 'Phone', 'Address', 'TechInterests', 'Notes', 'LastMet',
-      'PhotoDriveUrl', 'CreatedAt'
-    ]);
+    sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
-    sheet.getRange(1, 1, 1, 15).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+  } else {
+    // 檢查舊版表頭是否需要升級欄位
+    const firstRow = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1)).getValues()[0];
+    if (firstRow.length < 17 || !String(firstRow[1]).includes('NameZh')) {
+      // 舊版表頭自動平滑升級
+      sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    }
   }
 
   const folders = DriveApp.getFoldersByName(FOLDER_NAME);
@@ -40,9 +63,11 @@ function doPost(e) {
       const values = sheet.getDataRange().getValues();
       for (let i = values.length - 1; i >= 1; i--) {
         const rowId = String(values[i][0]).trim();
-        const rowName = String(values[i][1]).trim();
+        const rowNameZh = String(values[i][1]).trim();
+        const rowNameEn = String(values[i][2]).trim();
         if ((data.id && rowId === String(data.id).trim()) || 
-            (data.name && rowName.toLowerCase() === String(data.name).trim().toLowerCase())) {
+            (data.nameZh && rowNameZh.toLowerCase() === String(data.nameZh).trim().toLowerCase()) ||
+            (data.name && (rowNameZh === String(data.name).trim() || rowNameEn.toLowerCase() === String(data.name).trim().toLowerCase()))) {
           sheet.deleteRow(i + 1);
         }
       }
@@ -57,7 +82,8 @@ function doPost(e) {
         const parts = data.cardFrontImage.split(',');
         const contentType = parts[0].split(';')[0].replace('data:', '');
         const decoded = Utilities.base64Decode(parts[1]);
-        const fileName = (data.company || 'Card') + '_' + (data.name || 'Contact') + '_' + new Date().getTime() + '.jpg';
+        const namePart = data.nameZh || data.nameEn || data.name || 'Contact';
+        const fileName = (data.company || 'Card') + '_' + namePart + '_' + new Date().getTime() + '.jpg';
         const blob = Utilities.newBlob(decoded, contentType, fileName);
         const file = folder.createFile(blob);
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -67,12 +93,14 @@ function doPost(e) {
       }
     }
 
-    // 寫入 Google 試算表（自動加上 ' 避免電話報錯）
+    // 寫入 Google 試算表（包含中英文姓名、兩層部門結構）
     sheet.appendRow([
       data.id || ('card-' + new Date().getTime()),
-      data.name || '',
+      data.nameZh || '',
+      data.nameEn || '',
       data.title || '',
       data.company || '',
+      data.division || '',
       data.department || '',
       data.stakeholderRole || 'Technical Champion',
       data.sentiment || 'Champion',
@@ -86,7 +114,7 @@ function doPost(e) {
       new Date().toISOString()
     ]);
 
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Card stored', photoUrl: photoUrl })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Card stored in Google Sheet & Drive', photoUrl: photoUrl })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
@@ -107,23 +135,52 @@ function doGet(e) {
     if (values.length > 1) {
       for (let i = 1; i < values.length; i++) {
         const row = values[i];
-        if (!row[0] && !row[1]) continue;
+        if (!row[0] && !row[1] && !row[2]) continue;
 
         let lastMetStr = '';
-        if (row[12]) {
+        if (row[14]) {
           try {
-            lastMetStr = row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10);
+            lastMetStr = row[14] instanceof Date ? Utilities.formatDate(row[14], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[14]).substring(0, 10);
           } catch(dErr) {
-            lastMetStr = String(row[12]);
+            lastMetStr = String(row[14]);
           }
         }
 
-        cards.push({
+        // 兼容舊版與新版欄位格式
+        const isNewFormat = values[0].length >= 17 && String(values[0][1]).includes('NameZh');
+
+        const card = isNewFormat ? {
           id: String(row[0] || 'card-' + i),
+          nameZh: String(row[1] || ''),
+          nameEn: String(row[2] || ''),
+          name: (String(row[1] || '') && String(row[2] || '')) ? `${row[1]} (${row[2]})` : String(row[1] || row[2] || 'Unnamed'),
+          title: String(row[3] || ''),
+          company: String(row[4] || ''),
+          account: String(row[4] || ''),
+          division: String(row[5] || ''),
+          department: String(row[6] || ''),
+          stakeholderRole: String(row[7] || 'Technical Champion'),
+          sentiment: String(row[8] || 'Champion'),
+          email: String(row[9] || ''),
+          phone: String(row[10] || '').replace(/^#ERROR!/, ''),
+          mobile: String(row[10] || '').replace(/^#ERROR!/, ''),
+          address: String(row[11] || ''),
+          techInterests: String(row[12] || '').split(',').map(s => s.trim()).filter(Boolean),
+          notes: String(row[13] || ''),
+          lastMet: lastMetStr,
+          cardFrontImage: String(row[15] || ''),
+          theme: 'executive-navy',
+          favorite: false
+        } : {
+          // 舊版 15 欄位相容轉換
+          id: String(row[0] || 'card-' + i),
+          nameZh: String(row[1] || '').match(/[\u4e00-\u9fa5]/) ? String(row[1] || '') : '',
+          nameEn: !String(row[1] || '').match(/[\u4e00-\u9fa5]/) ? String(row[1] || '') : '',
           name: String(row[1] || ''),
           title: String(row[2] || ''),
           company: String(row[3] || ''),
           account: String(row[3] || ''),
+          division: '',
           department: String(row[4] || ''),
           stakeholderRole: String(row[5] || 'Technical Champion'),
           sentiment: String(row[6] || 'Champion'),
@@ -133,11 +190,13 @@ function doGet(e) {
           address: String(row[9] || ''),
           techInterests: String(row[10] || '').split(',').map(s => s.trim()).filter(Boolean),
           notes: String(row[11] || ''),
-          lastMet: lastMetStr,
+          lastMet: row[12] ? (row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10)) : '',
           cardFrontImage: String(row[13] || ''),
           theme: 'executive-navy',
           favorite: false
-        });
+        };
+
+        cards.push(card);
       }
     }
 
