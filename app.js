@@ -1661,6 +1661,57 @@ class CardVaultApp {
     }
   }
 
+  fetchCardsData(url) {
+    return new Promise(async (resolve, reject) => {
+      // 1. Try standard fetch first
+      try {
+        const res = await fetch(url, { redirect: 'follow' });
+        const text = await res.text();
+        const data = JSON.parse(text);
+        if (data && data.status === 'success') {
+          return resolve(data);
+        }
+      } catch (fetchErr) {
+        console.warn('Standard fetch attempt notice, switching to JSONP:', fetchErr);
+      }
+
+      // 2. JSONP fallback (guaranteed to bypass all CORS / WebKit redirect blocks)
+      const callbackName = 'cb_cardvault_' + Date.now();
+      const delimiter = url.includes('?') ? '&' : '?';
+      const scriptUrl = `${url}${delimiter}callback=${callbackName}`;
+      
+      const script = document.createElement('script');
+      script.src = scriptUrl;
+
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error('Sync timeout: please check Apps Script URL and permissions'));
+      }, 12000);
+
+      const cleanup = () => {
+        clearTimeout(timeout);
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+
+      window[callbackName] = (data) => {
+        cleanup();
+        if (data && data.status === 'success') {
+          resolve(data);
+        } else {
+          reject(new Error(data?.message || 'Sync error response'));
+        }
+      };
+
+      script.onerror = () => {
+        cleanup();
+        reject(new Error('Connection error: Check if Google Apps Script is deployed as Web App to "Anyone"'));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
   async pullFromGoogleSheet(silent = false) {
     if (!this.googleScriptUrl) {
       if (!silent) {
@@ -1674,18 +1725,7 @@ class CardVaultApp {
     icon?.classList.add('animate-spin');
 
     try {
-      const res = await fetch(this.googleScriptUrl, { redirect: 'follow' });
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (parseErr) {
-        console.error('Raw response from Google Script:', text);
-        if (text.includes('<html') || text.includes('accounts.google.com')) {
-          throw new Error('Please set "Who has access" to "Anyone" in Google Apps Script deployment');
-        }
-        throw new Error('Failed to parse response: ' + parseErr.message);
-      }
+      const data = await this.fetchCardsData(this.googleScriptUrl);
 
       if (data.status === 'success' && Array.isArray(data.cards)) {
         if (data.cards.length > 0) {
@@ -1702,6 +1742,11 @@ class CardVaultApp {
           this.saveData();
           this.populateFilterOptions();
           this.render();
+          const statusText = document.getElementById('syncStatusText');
+          if (statusText) {
+            statusText.textContent = `Connected & Synced (${this.cards.length} cards)`;
+            statusText.className = 'font-mono text-emerald-400 font-semibold';
+          }
           if (!silent) {
             this.showToast(`Synced ${this.cards.length} cards from Google Sheet!`);
             if (window.confetti) {
@@ -1717,8 +1762,6 @@ class CardVaultApp {
             this.showToast('Google Sheet is currently empty');
           }
         }
-      } else if (data.status === 'error') {
-        throw new Error(data.message || 'Apps script error');
       }
     } catch (err) {
       console.error('Failed to pull from Google Sheet:', err);
@@ -1728,7 +1771,7 @@ class CardVaultApp {
         statusText.className = 'font-mono text-rose-400 font-semibold';
       }
       if (!silent) {
-        this.showToast(err.message.includes('Anyone') ? 'Set "Who has access" to Anyone in Apps Script' : 'Check Google Sheet permissions');
+        this.showToast('Sync error: Check Apps Script permission');
       }
     } finally {
       icon?.classList.remove('animate-spin');

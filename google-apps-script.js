@@ -1,14 +1,6 @@
 /**
  * ATL CardVault — Google Apps Script Backend (Drive + Sheets)
- * 
- * 部署說明：
- * 1. 在 Google 試算表中，點擊上方選單【擴充功能】->【Apps Script】。
- * 2. 清空原本的程式碼，將本檔案全部複製貼上。
- * 3. 點擊右上角【部署】(Deploy) ->【新增部署】或【管理部署作業】。
- * 4. 設定：
- *    - 執行身分：【我】(Me)
- *    - 誰可以存取：【所有人】(Anyone)
- * 5. 點擊【部署】，複製上面的【網頁應用程式網址】(Web App URL)，貼回 CardVault 設定中即可！
+ * 支援 CORS 與 JSONP 雙向同步
  */
 
 const SHEET_NAME = 'Namecards';
@@ -101,60 +93,74 @@ function doPost(e) {
   }
 }
 
-// 供手機與電腦隨時拉取最新所有名片資料 (GET)
+// 供手機與電腦隨時拉取最新所有名片資料 (GET，支援標準 JSON 與 JSONP)
 function doGet(e) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) {
-      sheet = ss.getSheets()[0]; // 預設使用第一個分頁
+      sheet = ss.getSheets()[0];
     }
     const values = sheet.getDataRange().getValues();
-
-    if (values.length <= 1) {
-      return ContentService.createTextOutput(JSON.stringify({
-        status: 'success',
-        cards: []
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
     const cards = [];
 
-    for (let i = 1; i < values.length; i++) {
-      const row = values[i];
-      if (!row[0] && !row[1]) continue;
+    if (values.length > 1) {
+      for (let i = 1; i < values.length; i++) {
+        const row = values[i];
+        if (!row[0] && !row[1]) continue;
 
-      cards.push({
-        id: String(row[0] || 'card-' + i),
-        name: String(row[1] || ''),
-        title: String(row[2] || ''),
-        company: String(row[3] || ''),
-        account: String(row[3] || ''),
-        department: String(row[4] || ''),
-        stakeholderRole: String(row[5] || 'Technical Champion'),
-        sentiment: String(row[6] || 'Champion'),
-        email: String(row[7] || ''),
-        phone: String(row[8] || '').replace(/^#ERROR!/, ''),
-        mobile: String(row[8] || '').replace(/^#ERROR!/, ''),
-        address: String(row[9] || ''),
-        techInterests: String(row[10] || '').split(',').map(s => s.trim()).filter(Boolean),
-        notes: String(row[11] || ''),
-        lastMet: row[12] ? (row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10)) : '',
-        cardFrontImage: String(row[13] || ''),
-        theme: 'executive-navy',
-        favorite: false
-      });
+        let lastMetStr = '';
+        if (row[12]) {
+          try {
+            lastMetStr = row[12] instanceof Date ? Utilities.formatDate(row[12], Session.getScriptTimeZone() || 'GMT', 'yyyy-MM-dd') : String(row[12]).substring(0, 10);
+          } catch(dErr) {
+            lastMetStr = String(row[12]);
+          }
+        }
+
+        cards.push({
+          id: String(row[0] || 'card-' + i),
+          name: String(row[1] || ''),
+          title: String(row[2] || ''),
+          company: String(row[3] || ''),
+          account: String(row[3] || ''),
+          department: String(row[4] || ''),
+          stakeholderRole: String(row[5] || 'Technical Champion'),
+          sentiment: String(row[6] || 'Champion'),
+          email: String(row[7] || ''),
+          phone: String(row[8] || '').replace(/^#ERROR!/, ''),
+          mobile: String(row[8] || '').replace(/^#ERROR!/, ''),
+          address: String(row[9] || ''),
+          techInterests: String(row[10] || '').split(',').map(s => s.trim()).filter(Boolean),
+          notes: String(row[11] || ''),
+          lastMet: lastMetStr,
+          cardFrontImage: String(row[13] || ''),
+          theme: 'executive-navy',
+          favorite: false
+        });
+      }
     }
 
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'success',
-      cards: cards
-    })).setMimeType(ContentService.MimeType.JSON);
+    const payload = JSON.stringify({ status: 'success', cards: cards });
+    const callback = e && e.parameter && e.parameter.callback;
+
+    if (callback) {
+      return ContentService.createTextOutput(callback + '(' + payload + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } else {
+      return ContentService.createTextOutput(payload)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: 'error',
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    const errPayload = JSON.stringify({ status: 'error', message: err.toString() });
+    const callback = e && e.parameter && e.parameter.callback;
+    if (callback) {
+      return ContentService.createTextOutput(callback + '(' + errPayload + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    } else {
+      return ContentService.createTextOutput(errPayload)
+        .setMimeType(ContentService.MimeType.JSON);
+    }
   }
 }
