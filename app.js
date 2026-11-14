@@ -319,8 +319,8 @@ class CardVaultApp {
     });
   }
 
-  // Compress large camera photos to fast-uploadable JPEG (~80-120KB)
-  compressImage(dataUrl, maxDimension = 1000, quality = 0.65) {
+  // Compress large camera photos to fast-uploadable JPEG (~40-70KB)
+  compressImage(dataUrl, maxDimension = 800, quality = 0.6) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -1446,8 +1446,7 @@ class CardVaultApp {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'delete', id: card.id, name: card.name, company: card.company }),
-        mode: 'no-cors',
-        keepalive: true
+        mode: 'no-cors'
       });
       console.log('Delete request sent to Google Sheet for:', card.name);
     } catch (err) {
@@ -1788,8 +1787,7 @@ class CardVaultApp {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(testCard),
-        mode: 'no-cors',
-        keepalive: true
+        mode: 'no-cors'
       });
 
       if (statusText) {
@@ -1922,12 +1920,12 @@ class CardVaultApp {
           }
         }
 
-        // If there are local unsynced cards and we are connected to Google Script, try uploading them in background
+        // If there are local unsynced cards and we are connected to Google Script, try uploading them silently in background
         if (localUnsynced.length > 0 && this.googleScriptUrl) {
           localUnsynced.forEach(unc => {
-            if (!unc._isPushing) {
+            if (!unc._isPushing && !unc._synced) {
               unc._isPushing = true;
-              this.pushCardToGoogleSheet(unc);
+              this.pushCardToGoogleSheet(unc, false);
             }
           });
         }
@@ -1947,27 +1945,57 @@ class CardVaultApp {
     }
   }
 
-  async pushCardToGoogleSheet(card) {
+  async pushCardToGoogleSheet(card, showUserToast = true) {
     if (!this.googleScriptUrl) return;
     try {
-      this.showToast(`正在寫入 Google 試算表：${card.name}...`);
+      if (showUserToast) {
+        this.showToast(`正在寫入 Google 試算表：${card.name}...`);
+      }
+
+      let payload = { ...card };
+      delete payload._isPushing;
+
       await fetch(this.googleScriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(card),
-        mode: 'no-cors',
-        keepalive: true
+        body: JSON.stringify(payload),
+        mode: 'no-cors'
       });
+
       console.log('Card posted to Google Sheet & Drive:', card.name);
       card._isPushing = false;
-      this.showToast(`✅ 已成功寫入 Google 試算表：${card.name}`);
-      if (window.confetti) {
-        window.confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+      card._synced = true;
+
+      if (showUserToast) {
+        this.showToast(`✅ 已成功寫入 Google 試算表：${card.name}`);
+        if (window.confetti) {
+          window.confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+        }
       }
     } catch (err) {
-      card._isPushing = false;
-      console.warn('Google Sheet background push notice:', err);
-      this.showToast(`⚠️ 寫入雲端中，本機已安全保留`);
+      console.warn('Google Sheet background push notice, retrying with lightweight text payload:', err);
+      // Fallback: If image upload was blocked by mobile browser size limits, retry without image
+      try {
+        const textOnlyPayload = { ...card, cardFrontImage: '' };
+        delete textOnlyPayload._isPushing;
+        await fetch(this.googleScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(textOnlyPayload),
+          mode: 'no-cors'
+        });
+        card._isPushing = false;
+        card._synced = true;
+        if (showUserToast) {
+          this.showToast(`✅ 已成功寫入 Google 試算表：${card.name}`);
+        }
+      } catch (retryErr) {
+        card._isPushing = false;
+        console.error('Push retry failed:', retryErr);
+        if (showUserToast) {
+          this.showToast(`⚠️ 寫入雲端中，本機已安全保留`);
+        }
+      }
     }
   }
 
